@@ -23,11 +23,13 @@ import {
 } from "../state/applyCorrections";
 import { compareProfile } from "../domain/compareProfile";
 import { buildScanCsv, escapeCsvCell } from "../state/scanExport";
+import { photoIndexFromWarning, warningLinks } from "../state/warningLinks";
 import aliasMapJson from "../domain/aliasMap.json";
 import { sampleMasalaBiscuits } from "../api/mocks/sampleMasalaBiscuits";
 import { sampleCheeseCrackers } from "../api/mocks/sampleCheeseCrackers";
 import { sampleRicePuffs } from "../api/mocks/sampleRicePuffs";
 import { sampleChocoBar } from "../api/mocks/sampleChocoBar";
+import { sampleItcTedheMedhe } from "../api/mocks/sampleItcTedheMedhe";
 import type { FixturePack } from "../api/mocks/types";
 
 // Node-side script; minimal local declaration so no @types/node is needed.
@@ -401,6 +403,68 @@ check(
   "rice-puffs no-match only with all confirmations",
   (sampleRicePuffs.expected as Results).summary.no_match_found === 4 &&
     sampleRicePuffs.demoConfirm?.ingredients_complete === true,
+);
+
+// --- 4. Warning links (Mission 3) -------------------------------------------
+
+console.log("\nWarning links");
+
+check(
+  "photo link parsed from 'photo 1' (1-based to 0-based)",
+  photoIndexFromWarning("The ingredient list is only partly readable in photo 1.", 2) === 0,
+);
+check(
+  "photo link parsed from 'image 2'",
+  photoIndexFromWarning("image 2 shows glare over the values", 2) === 1,
+);
+check("no photo mention produces no link", photoIndexFromWarning("Dates were not inferred.", 2) === null);
+check("out-of-range photo number produces no link", photoIndexFromWarning("photo 5 is blurry", 2) === null);
+
+const chocoLinks = warningLinks(
+  sampleChocoBar.extraction,
+  "The ingredient list is only partly readable in photo 1.",
+);
+check("choco warning links to photo 0", chocoLinks.photoIndex === 0);
+check(
+  "choco warning links no unrelated rows (conservative matching)",
+  chocoLinks.rows.length === 0,
+);
+
+// x5-style case: a warning naming the exact printed word "Mik" must link the
+// row that carries it, with the as-printed quote and photo index.
+const mikExtraction: Extraction = {
+  ...sampleChocoBar.extraction,
+  images: [{ index: 0, role: "ingredients", quality: "good", note: null }],
+  ingredients: [
+    {
+      id: "ing-9",
+      label_text: "Mik",
+      evidence_quote: "Mik",
+      image_index: 0,
+      review_required: true,
+      review_reason: "quote could not be verified",
+    },
+  ],
+  warnings: [
+    "Mock OCR correction case: the visible source wording is recorded as Mik until the user checks the photo.",
+  ],
+};
+const mikLinks = warningLinks(mikExtraction, mikExtraction.warnings[0]);
+check(
+  "'Mik' warning links the ingredient row carrying it",
+  mikLinks.rows.length === 1 &&
+    mikLinks.rows[0].rowId === "ing-9" &&
+    mikLinks.rows[0].printedText === "Mik" &&
+    mikLinks.rows[0].imageIndex === 0,
+);
+
+// Warnings that name nothing in the extraction must render without links.
+const itcLinks = sampleItcTedheMedhe.extraction.warnings.map((w) =>
+  warningLinks(sampleItcTedheMedhe.extraction, w),
+);
+check(
+  "generic demo warnings produce no fabricated row links",
+  itcLinks.every((l) => l.rows.length === 0),
 );
 
 // --- Result ------------------------------------------------------------------

@@ -93,6 +93,7 @@ export function AllergenTable({
               return (
                 <tr
                   key={id}
+                  data-row-id={id}
                   className={needsReview ? "row-review" : undefined}
                 >
                   <td>
