@@ -1,0 +1,59 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-x3-ingredients-unreadable",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "unusable", "note": "Photo too blurry to transcribe." }
+  ],
+  "product": { "name": "Sample Tomato Soup Mix", "brand": null, "quantity": "50 g" },
+  "package_facts": [
+    {
+      "kind": "product_name",
+      "value_text": "Sample Tomato Soup Mix",
+      "label_text": "Sample Tomato Soup Mix",
+      "evidence_quote": "Sample Tomato Soup Mix",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    },
+    {
+      "kind": "quantity",
+      "value_text": "50 g",
+      "label_text": "Net quantity 50 g",
+      "evidence_quote": "Net quantity 50 g",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    }
+  ],
+  "sections": {
+    "ingredients": {
+      "status": "unreadable",
+      "text": null,
+      "image_index": 0,
+      "reason": "Photo too blurry to transcribe the ingredient list; nothing was inferred."
+    },
+    "allergen_statement": {
+      "status": "unreadable",
+      "text": null,
+      "image_index": 0,
+      "reason": "Allergen statement panel not readable in this photo."
+    },
+    "nutrition": {
+      "status": "unreadable",
+      "text": null,
+      "image_index": 0,
+      "reason": "Nutrition values not readable in this photo."
+    },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Tomato Soup Mix; Net quantity 50 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [],
+  "nutrition": [],
+  "warnings": []
+}

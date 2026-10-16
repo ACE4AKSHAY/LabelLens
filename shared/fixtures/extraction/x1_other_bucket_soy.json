@@ -1,0 +1,48 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-x1-other-bucket-soy",
+  "images": [
+    { "index": 0, "role": "allergens", "quality": "good", "note": null }
+  ],
+  "product": { "name": "Sample Baked Rusk", "brand": null, "quantity": "200 g" },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Wheat Flour (Maida), Palm Oil, Sugar, Salt",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Prepared in a facility that also handles soy ingredients.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Baked Rusk; Net quantity 200 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Wheat Flour (Maida)", "evidence_quote": "Wheat Flour (Maida)", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Palm Oil", "evidence_quote": "Palm Oil", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-3", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-4", "label_text": "Salt", "evidence_quote": "Salt", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": {
+    "contains": [],
+    "may_contain": [],
+    "other": [
+      { "label_text": "soy ingredients", "evidence_quote": "Prepared in a facility that also handles soy ingredients.", "image_index": 0, "review_required": false, "review_reason": null }
+    ]
+  },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": []
+}

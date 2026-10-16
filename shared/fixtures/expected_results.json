@@ -1,0 +1,322 @@
+{
+  "version": 1,
+  "description": "Golden-case expectations for compareProfile. G1-G17 follow Appendix 19.2 of the design document; G0 is the pre-existing sample fixture; X1-X3 are Module C extras (other-bucket phrases, custom-avoid terms, unreadable text). reviewed_terms / reviewed_diet_terms model a teammate having verified a mapping for that case only; the shipped aliasMap.json stays reviewed:false everywhere.",
+  "default_profile": {
+    "schema_version": "1",
+    "allergens": ["peanut", "milk", "tree_nut"],
+    "custom_avoid": [],
+    "diet": "vegetarian"
+  },
+  "cases": [
+    {
+      "id": "G0",
+      "fixture": "clear_peanut_alias.json",
+      "description": "Sample fixture: several simultaneous hits (alias, contains, may-contain) plus a veg mark.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "possible_conflict", "rule": "R3" },
+        "milk": { "status": "conflict", "rule": "R1" },
+        "tree_nut": { "status": "possible_conflict", "rule": "R2" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      },
+      "expect_evidence_label_text": {
+        "milk": ["Milk Solids", "Wheat, Milk, Soy"]
+      }
+    },
+    {
+      "id": "G1",
+      "fixture": "g1_g2_groundnut_alias.json",
+      "description": "Groundnut Oil with the alias reviewed:true -> peanut conflict via alias (R1).",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "reviewed_terms": ["groundnut"],
+      "expected": {
+        "peanut": { "status": "conflict", "rule": "R1" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      }
+    },
+    {
+      "id": "G2",
+      "fixture": "g1_g2_groundnut_alias.json",
+      "description": "Same label, alias left unreviewed (shipped map) -> peanut possible_conflict (R3), never conflict.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "possible_conflict", "rule": "R3" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      }
+    },
+    {
+      "id": "G3",
+      "fixture": "g3_may_contain_tree_nut.json",
+      "description": "May-contain tree nuts -> tree_nut possible_conflict (R2); precautionary never becomes conflict.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "no_match_found", "rule": "R6" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "possible_conflict", "rule": "R2" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      }
+    },
+    {
+      "id": "G4",
+      "fixture": "g4_milk_solids_row_needs_review.json",
+      "description": "Milk Solids in a review_required row -> milk possible_conflict (R3), not conflict; other items unknown.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "possible_conflict", "rule": "R3" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": {
+        "peanut": "needs review"
+      }
+    },
+    {
+      "id": "G5",
+      "fixture": "g5_ingredients_partial_no_hits.json",
+      "description": "Ingredients readable_partial and not confirmed, no hits -> all unknown (R7).",
+      "confirm": { "ingredients_complete": false, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "unknown", "rule": "R7" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": {
+        "peanut": "only partly readable"
+      }
+    },
+    {
+      "id": "G6",
+      "fixture": "g6_ingredients_not_uploaded.json",
+      "description": "Ingredients not uploaded -> all unknown (R7); coverage reports not_uploaded.",
+      "confirm": { "ingredients_complete": false, "allergen_statement_complete": false, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "unknown", "rule": "R7" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": {
+        "peanut": "not uploaded"
+      }
+    },
+    {
+      "id": "G7",
+      "fixture": "g7_g8_clean_label.json",
+      "description": "Clear label, no profile terms, everything confirmed -> all no_match_found (R6) with the mandatory wording.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "no_match_found", "rule": "R6" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      },
+      "expect_reason_includes": {
+        "peanut": "not a safety check"
+      }
+    },
+    {
+      "id": "G8",
+      "fixture": "g7_g8_clean_label.json",
+      "description": "Same clean label but the user did not confirm ingredient completeness -> all unknown (R7), never no_match.",
+      "confirm": { "ingredients_complete": false, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "unknown", "rule": "R7" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": {
+        "peanut": "did not confirm"
+      }
+    },
+    {
+      "id": "G9",
+      "fixture": "g9_allergen_line_not_uploaded.json",
+      "description": "Allergen statement not uploaded and pack-has-none not set -> all unknown; reason names the allergen line.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": false, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "unknown", "rule": "R7" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": {
+        "peanut": "allergen statement was not uploaded"
+      }
+    },
+    {
+      "id": "G10",
+      "fixture": "g10_nonveg_mark_clear.json",
+      "description": "Clear nonveg_mark -> diet_vegetarian conflict (R4); allergen items unaffected.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "no_match_found", "rule": "R6" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "diet_vegetarian": { "status": "conflict", "rule": "R4" }
+      }
+    },
+    {
+      "id": "G11",
+      "fixture": "g11_gelatin_gummies.json",
+      "description": "Gelatin with reviewed:true diet term -> diet_vegetarian conflict (R4); the veg mark is listed as evidence but does not clear.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "reviewed_diet_terms": ["gelatin"],
+      "expected": {
+        "peanut": { "status": "no_match_found", "rule": "R6" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "diet_vegetarian": { "status": "conflict", "rule": "R4" }
+      },
+      "expect_evidence_label_text": {
+        "diet_vegetarian": ["Gelatin"]
+      }
+    },
+    {
+      "id": "G12",
+      "fixture": "g12_hit_partial_sections.json",
+      "description": "Hit present while sections are partial/unconfirmed -> the hit wins over unknown (R8).",
+      "confirm": { "ingredients_complete": false, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "possible_conflict", "rule": "R3" },
+        "milk": { "status": "unknown", "rule": "R7" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      }
+    },
+    {
+      "id": "G13",
+      "fixture": "g13_edited_groundnut_row.json",
+      "description": "User-corrected row (misread 'Groundnut 0il' edited to 'Groundnut Oil') counts; evidence carries the edited text.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "possible_conflict", "rule": "R3" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      },
+      "expect_evidence_label_text": {
+        "peanut": ["Groundnut Oil"]
+      }
+    },
+    {
+      "id": "G14",
+      "fixture": "g14_emulsifier_ambiguous_soy.json",
+      "description": "Emulsifier with no stated source, mapped ambiguous for soy -> soy possible_conflict (R3).",
+      "profile": {
+        "schema_version": "1",
+        "allergens": ["peanut", "milk", "tree_nut", "soy"],
+        "custom_avoid": [],
+        "diet": "vegetarian"
+      },
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "no_match_found", "rule": "R6" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "soy": { "status": "possible_conflict", "rule": "R3" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      }
+    },
+    {
+      "id": "G15",
+      "fixture": "g15_contains_row_needs_review.json",
+      "description": "Contains phrase with review_required:true -> milk possible_conflict (R3), never conflict; others unknown.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "possible_conflict", "rule": "R3" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      }
+    },
+    {
+      "id": "G16",
+      "fixture": "g16_nonveg_mark_unclear.json",
+      "description": "nonveg_mark with review_required:true -> diet_vegetarian possible_conflict (R4), never conflict.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "no_match_found", "rule": "R6" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "diet_vegetarian": { "status": "possible_conflict", "rule": "R4" }
+      }
+    },
+    {
+      "id": "G17",
+      "fixture": "g17_row_needs_review_no_hits.json",
+      "description": "No matching term but an ingredient row still needs review -> all unknown (R7), never no_match_found.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "unknown", "rule": "R7" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": {
+        "peanut": "needs review"
+      }
+    },
+    {
+      "id": "X1",
+      "fixture": "x1_other_bucket_soy.json",
+      "description": "Facility statement in the 'other' bucket -> soy possible_conflict (R2); treated as precautionary.",
+      "profile": {
+        "schema_version": "1",
+        "allergens": ["peanut", "milk", "tree_nut", "soy"],
+        "custom_avoid": [],
+        "diet": "vegetarian"
+      },
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "no_match_found", "rule": "R6" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "tree_nut": { "status": "no_match_found", "rule": "R6" },
+        "soy": { "status": "possible_conflict", "rule": "R2" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      }
+    },
+    {
+      "id": "X2",
+      "fixture": "x2_custom_avoid_msg.json",
+      "description": "Custom avoid term matches the exact printed phrase -> conflict (R5); no alias map for custom terms.",
+      "profile": {
+        "schema_version": "1",
+        "allergens": ["peanut", "milk"],
+        "custom_avoid": ["monosodium glutamate"],
+        "diet": "vegetarian"
+      },
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "no_match_found", "rule": "R6" },
+        "milk": { "status": "no_match_found", "rule": "R6" },
+        "custom:monosodium glutamate": { "status": "conflict", "rule": "R5" },
+        "diet_vegetarian": { "status": "no_match_found", "rule": "R6" }
+      },
+      "expect_evidence_label_text": {
+        "custom:monosodium glutamate": ["Monosodium Glutamate (INS 621)"]
+      }
+    },
+    {
+      "id": "X3",
+      "fixture": "x3_ingredients_unreadable.json",
+      "description": "Blurry photo -> ingredients and allergen statement unreadable -> all unknown (R7), never no_match.",
+      "confirm": { "ingredients_complete": false, "allergen_statement_complete": false, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "unknown", "rule": "R7" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": {
+        "peanut": "could not be read"
+      }
+    }
+  ]
+}

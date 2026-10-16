@@ -1,0 +1,48 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g4-milk-solids-row-needs-review",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "glare", "note": "Glare over part of the ingredient list." }
+  ],
+  "product": { "name": "Sample Tea Rusk", "brand": null, "quantity": "150 g" },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Wheat Flour (Maida), Sugar, Milk Solids, Cardamom",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Wheat.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Tea Rusk; Net quantity 150 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Wheat Flour (Maida)", "evidence_quote": "Wheat Flour (Maida)", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-3", "label_text": "Milk Solids", "evidence_quote": "Milk Solids", "image_index": 0, "review_required": true, "review_reason": "Model quote could not be matched to the section transcript; a human must check this row." },
+    { "id": "ing-4", "label_text": "Cardamom", "evidence_quote": "Cardamom", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": {
+    "contains": [
+      { "label_text": "Wheat", "evidence_quote": "Contains: Wheat.", "image_index": 0, "review_required": false, "review_reason": null }
+    ],
+    "may_contain": [],
+    "other": []
+  },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": []
+}

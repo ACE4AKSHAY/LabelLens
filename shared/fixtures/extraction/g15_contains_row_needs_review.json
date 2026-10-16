@@ -1,0 +1,49 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g15-contains-row-needs-review",
+  "images": [
+    { "index": 0, "role": "allergens", "quality": "glare", "note": "Glare over the allergen statement." }
+  ],
+  "product": { "name": "Sample Choco Wafers", "brand": null, "quantity": "75 g" },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Wheat Flour (Maida), Sugar, Cocoa Solids, Emulsifier (Soy Lecithin), Salt",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Milk.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Choco Wafers; Net quantity 75 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Wheat Flour (Maida)", "evidence_quote": "Wheat Flour (Maida)", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-3", "label_text": "Cocoa Solids", "evidence_quote": "Cocoa Solids", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-4", "label_text": "Emulsifier (Soy Lecithin)", "evidence_quote": "Emulsifier (Soy Lecithin)", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-5", "label_text": "Salt", "evidence_quote": "Salt", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": {
+    "contains": [
+      { "label_text": "Milk", "evidence_quote": "Contains: Milk", "image_index": 0, "review_required": true, "review_reason": "Quote check could not match this phrase to the allergen statement transcript." }
+    ],
+    "may_contain": [],
+    "other": []
+  },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": []
+}

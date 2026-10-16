@@ -1,0 +1,58 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g1-g2-groundnut-alias",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "good", "note": null }
+  ],
+  "product": { "name": "Sample Salted Crackers", "brand": null, "quantity": "100 g" },
+  "package_facts": [
+    {
+      "kind": "product_name",
+      "value_text": "Sample Salted Crackers",
+      "label_text": "Sample Salted Crackers",
+      "evidence_quote": "Sample Salted Crackers",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    }
+  ],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Refined Wheat Flour (Maida), Sugar, Groundnut Oil, Salt",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Wheat.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Salted Crackers; Net quantity 100 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Refined Wheat Flour (Maida)", "evidence_quote": "Refined Wheat Flour (Maida)", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-3", "label_text": "Groundnut Oil", "evidence_quote": "Groundnut Oil", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-4", "label_text": "Salt", "evidence_quote": "Salt", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": {
+    "contains": [
+      { "label_text": "Wheat", "evidence_quote": "Contains: Wheat.", "image_index": 0, "review_required": false, "review_reason": null }
+    ],
+    "may_contain": [],
+    "other": []
+  },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": []
+}

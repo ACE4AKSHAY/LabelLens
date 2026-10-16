@@ -1,0 +1,43 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g11-gelatin-gummies",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "good", "note": null }
+  ],
+  "product": { "name": "Sample Fruit Gummies", "brand": null, "quantity": "100 g" },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Glucose Syrup, Sugar, Gelatin, Citric Acid, Natural Fruit Concentrate",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Nil.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Fruit Gummies; Net quantity 100 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Glucose Syrup", "evidence_quote": "Glucose Syrup", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-3", "label_text": "Gelatin", "evidence_quote": "Gelatin", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-4", "label_text": "Citric Acid", "evidence_quote": "Citric Acid", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-5", "label_text": "Natural Fruit Concentrate", "evidence_quote": "Natural Fruit Concentrate", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": []
+}
