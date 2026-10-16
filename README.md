@@ -29,7 +29,25 @@ Use the uploaded modular design document in `docs/` as the detailed product and 
 
 ## Local setup
 
-Setup commands and environment variables will be added with the first implementation scaffold. Never commit `.env` files or API keys. Use `.env.example` files with placeholders only.
+The backend runs in mock mode by default. Keep credentials in `backend/.env`; never commit `.env` files or API keys.
+
+```powershell
+cd backend
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+uvicorn app.main:app --reload --port 8000
+```
+
+From the repository root, run the deterministic rule and fixture checks:
+
+```powershell
+npm run check:rules
+backend\.venv\Scripts\python.exe scripts\validate_fixtures.py
+```
+
+The current integration includes the backend and Module C rules. Person 1's functional UI remains on `feat/a-ui` while its reskin is being decided.
 
 ## Module C — deterministic comparison rules (Person 3)
 
@@ -50,7 +68,7 @@ npm run check:rules            # golden cases G0-X3: expected vs actual per item
 python scripts/validate_fixtures.py   # validates every fixture against the frozen Pydantic contract (needs Python 3.12+)
 ```
 
-`check:rules` also mirrors the contract structurally so it runs without Python; the Pydantic script remains the authoritative schema check. On this branch both were run: 21/21 golden cases pass, and all 19 fixtures are structurally valid. `validate_fixtures.py` must still be run on a machine with Python (none was available when this branch was built).
+`check:rules` also mirrors the contract structurally so it runs without Python; the Pydantic script remains the authoritative schema check. Integration verification passed: 21/21 golden cases and 19/19 fixtures against the backend Pydantic contract.
 
 ### How the UI uses it (Person 1)
 

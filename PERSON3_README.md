@@ -45,17 +45,19 @@ Everything below is committed and pushed. Do not rebuild it — read it, then ex
 - `scripts/check_rules.mjs` + root `package.json` → `npm run check:rules` — the golden-case
   harness. Currently **21/21 PASS**, and it independently re-verifies the R6 safety gate.
 - `scripts/validate_fixtures.py` — validates all fixtures against Person 2's frozen Pydantic
-  contract. Written, **but never run** (the build machine had no Python).
+  contract. It passed for all 19 fixtures during integration (Python 3.10.11).
 - `README.md` — section "Module C" with usage and recorded decisions.
 
-Status of checks at push time:
+Status of checks at Person 3's branch push:
 
 ```text
 npm run check:rules                -> 21/21 golden cases passed
 fixture structural validation      -> 19/19 valid
 tsc --noEmit --strict (types)      -> clean
-python scripts/validate_fixtures.py -> NOT RUN (no Python on the build machine)
+python scripts/validate_fixtures.py -> NOT RUN at branch push
 ```
+
+The integration run has since validated all 19 fixtures against the current backend Pydantic contract.
 
 ---
 
@@ -140,8 +142,8 @@ profile item), run `npm run check:rules`. Green = done.
 
 ### Yours to do, roughly in order
 
-1. **Run `python scripts/validate_fixtures.py` on any machine with Python 3.12** and confirm
-   19/19. It is the authoritative schema check and has never been executed.
+1. **Fixture schema validation is complete:** all 19 fixtures passed `scripts/validate_fixtures.py`
+   against Person 2's backend Pydantic models during integration.
 2. **Verify alias entries and flip `reviewed: true`** one by one against a reliable source
    (start with the obvious India hits: groundnut=peanut, maida/atta=wheat, til=sesame,
    ghee/paneer/curd=milk). Until then the map is honest but timid — everything is only
