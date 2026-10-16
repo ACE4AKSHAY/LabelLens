@@ -20,7 +20,7 @@ The checked-in `.env.example` uses mock mode and contains no credential. `EXTRAC
 - `EXTRACT_MODE=mock|live` — defaults to `mock`.
 - `VISION_PROVIDER=gemini|glm` — defaults to `gemini`; set to `glm` to use Z.AI.
 - `GEMINI_API_KEY` — required only in live mode; set it in `backend/.env` or the backend process environment.
-- `GEMINI_MODEL` — defaults to `gemini-3.8-flash`; select another model supporting image input and structured output here. One local check with a supplied label photo returned a schema-valid extraction in 13.7 seconds; the extracted text was not independently scored, and one request is not a latency benchmark.
+- `GEMINI_MODEL` — defaults to `gemini-3.8-flash`; select another model supporting image input and structured output here. Gemini 3 uses its default temperature; the backend sets low thinking effort to reduce latency for label extraction. One local check with a supplied label photo returned a schema-valid extraction in 13.7 seconds; the extracted text was not independently scored, and one request is not a latency benchmark.
 - `GEMINI_FALLBACK_MODEL` — defaults to `gemini-3.6-flash`. It is tried for model-specific request or output failures. Transient network, 5xx, and timeout errors go to the other provider when its key is configured.
 - `GLM_API_KEY` (or `ZAI_API_KEY`) — required when GLM is the primary provider; when Gemini is primary, configuring it enables GLM failover.
 - `GLM_MODEL` — defaults to `glm-5.3-flash`, Z.AI's multimodal GLM-5.3 Flash model.

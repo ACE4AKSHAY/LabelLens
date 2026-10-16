@@ -628,6 +628,70 @@ button.step-chip.step-current:hover {
   border-left: 3px solid var(--status-possible);
 }
 
+/* Uncertain interpretation (unverified model suggestion): visually distinct
+   from an unresolved review flag — dotted accent, softer than row-review. */
+.row-uncertain {
+  background: var(--accent-soft);
+}
+
+.row-uncertain td:first-child {
+  border-left: 3px dotted var(--accent);
+}
+
+/* Flash highlight when a warning's "Inspect reading" jumps to a row. */
+.row-inspect-highlight,
+tr.row-inspect-highlight td {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-soft);
+}
+
+/* Warnings panel: reading flags with their exact printed phrase + photo link. */
+.warnings-panel {
+  border-style: dashed;
+  border-color: var(--status-possible);
+}
+
+.warnings-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.warning-item {
+  border-top: 1px solid var(--border);
+  padding-top: var(--sp-2);
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.warning-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.warning-text {
+  font-weight: 600;
+}
+
+.warning-quote {
+  margin: 0;
+  width: 100%;
+}
+
+.warning-row-link {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--r-inner);
+  background: var(--surface-sunken);
+  padding: 8px 10px;
+  display: grid;
+  gap: 6px;
+}
+
 .printed-text {
   font-weight: 600;
 }

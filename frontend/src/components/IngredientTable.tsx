@@ -105,11 +105,22 @@ export function IngredientTable({
               normalizedFor(row, correctedText ?? row.label_text) ?? "",
             );
             const suggestion = row.suggested_group ?? null;
+            // Uncertain interpretation: an unverified model suggestion about
+            // what the printed term means. Distinct from an unresolved review
+            // flag — this row was read; the grouping is the uncertain part.
+            const uncertainSuggestion = !needsReview && suggestion !== null;
 
             return (
               <tr
                 key={row.id}
-                className={needsReview ? "row-review" : undefined}
+                data-row-id={row.id}
+                className={
+                  needsReview
+                    ? "row-review"
+                    : uncertainSuggestion
+                      ? "row-uncertain"
+                      : undefined
+                }
               >
                 <td>
                   {editingId === row.id ? (
@@ -158,6 +169,21 @@ export function IngredientTable({
                                 {correctedText}
                               </p>
                             )}
+                          {/* The original as-printed quote stays visible
+                              beside any correction. */}
+                          <blockquote className="allergen-evidence">
+                            “{row.evidence_quote}”
+                          </blockquote>
+                          {row.image_index !== null && (
+                            <button
+                              type="button"
+                              className="btn btn-quiet btn-sm"
+                              onClick={() => onFocusPhoto(row.image_index)}
+                            >
+                              <ZoomIcon size={15} />
+                              Show original on photo
+                            </button>
+                          )}
                           <button
                             type="button"
                             className="btn btn-quiet btn-sm"
@@ -165,6 +191,36 @@ export function IngredientTable({
                           >
                             Restore original reading
                           </button>
+                        </div>
+                      )}
+                      {uncertainSuggestion && (
+                        <div className="review-cell uncertain-cell">
+                          <span className="chip chip-warn">
+                            unverified interpretation
+                          </span>
+                          <p className="small review-reason">
+                            Read as printed, but the link to{" "}
+                            <strong>{suggestion!.group}</strong> is a model
+                            suggestion nobody has reviewed: {suggestion!.note}
+                          </p>
+                          <div className="row">
+                            <button
+                              type="button"
+                              className="btn btn-quiet btn-sm"
+                              onClick={() => onFocusPhoto(row.image_index)}
+                            >
+                              <ZoomIcon size={15} />
+                              Inspect on photo
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-quiet btn-sm"
+                              onClick={() => startEdit(row)}
+                            >
+                              <EditIcon size={15} />
+                              Correct the reading
+                            </button>
+                          </div>
                         </div>
                       )}
                       {needsReview && (

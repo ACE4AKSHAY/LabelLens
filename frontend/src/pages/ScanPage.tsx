@@ -16,6 +16,7 @@ import { NutritionTable } from "@components/NutritionTable";
 import { PackageFacts } from "@components/PackageFacts";
 import { CouldntReadPanel } from "@components/CouldntReadPanel";
 import { PersistentNote } from "@components/PersistentNote";
+import { WarningsPanel } from "@components/WarningsPanel";
 import { profileSummary } from "@state/profileStore";
 import aliasMapJson from "@domain/aliasMap.json";
 import type { AliasMap } from "@domain/compareProfile";
@@ -44,6 +45,18 @@ export function ScanPage({
   } = useScan();
   const { profile } = useProfile();
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
+
+  // "Inspect reading" from a warning: scroll to the row and flash it.
+  const inspectRow = (rowId: string) => {
+    const el = document.querySelector(`[data-row-id="${CSS.escape(rowId)}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("row-inspect-highlight");
+    window.setTimeout(
+      () => el.classList.remove("row-inspect-highlight"),
+      1800,
+    );
+  };
 
   const editedEvidence = useMemo(
     () =>
@@ -133,6 +146,13 @@ export function ScanPage({
                     uncertain; check the package directly.
                   </p>
                 </div>
+              )}
+              {scan.extraction && scan.extraction.warnings.length > 0 && (
+                <WarningsPanel
+                  extraction={scan.extraction}
+                  onFocusPhoto={setFocusIndex}
+                  onInspectRow={inspectRow}
+                />
               )}
               <div className="scan-export-actions" role="group" aria-label="Export scan results">
                 <button
