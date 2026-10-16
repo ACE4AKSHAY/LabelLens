@@ -9,7 +9,10 @@ from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 PROJECT_DIR = BACKEND_DIR.parent
-load_dotenv(BACKEND_DIR / ".env", override=False)
+_requested_extract_mode = os.getenv("EXTRACT_MODE")
+load_dotenv(BACKEND_DIR / ".env", override=True)
+if _requested_extract_mode:
+    os.environ["EXTRACT_MODE"] = _requested_extract_mode
 
 
 @dataclass(frozen=True)
@@ -19,6 +22,10 @@ class Settings:
     gemini_model: str
     max_image_bytes: int
     max_total_image_bytes: int
+    vision_provider: Literal["gemini", "glm"] = "gemini"
+    glm_api_key: str | None = None
+    glm_model: str = "glm-5.3-flash"
+    glm_api_url: str = "https://api.z.ai/api/paas/v4/chat/completions"
 
 
 def _positive_int(name: str, default: int) -> int:
@@ -37,14 +44,22 @@ def get_settings() -> Settings:
     if mode not in {"mock", "live"}:
         raise ValueError("EXTRACT_MODE must be either 'mock' or 'live'")
 
+    provider = os.getenv("VISION_PROVIDER", "gemini").strip().lower()
+    if provider not in {"gemini", "glm"}:
+        raise ValueError("VISION_PROVIDER must be either 'gemini' or 'glm'")
+
     max_total_image_bytes = _positive_int("MAX_TOTAL_IMAGE_BYTES", 14 * 1024 * 1024)
     if max_total_image_bytes > 14 * 1024 * 1024:
         raise ValueError("MAX_TOTAL_IMAGE_BYTES cannot exceed 14 MiB with inline Gemini requests")
 
     return Settings(
         extract_mode=mode,  # type: ignore[arg-type]
+        vision_provider=provider,  # type: ignore[arg-type]
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip() or None,
-        gemini_model=os.getenv("GEMINI_MODEL", "").strip() or "gemini-3.8-flash",
+        gemini_model=os.getenv("GEMINI_MODEL", "").strip() or "gemini-3.5-flash-lite",
+        glm_api_key=os.getenv("GLM_API_KEY", "").strip() or os.getenv("ZAI_API_KEY", "").strip() or None,
+        glm_model=os.getenv("GLM_MODEL", "").strip() or "glm-5.3-flash",
+        glm_api_url=os.getenv("GLM_API_URL", "").strip() or "https://api.z.ai/api/paas/v4/chat/completions",
         max_image_bytes=_positive_int("MAX_IMAGE_BYTES", 10 * 1024 * 1024),
         max_total_image_bytes=max_total_image_bytes,
     )

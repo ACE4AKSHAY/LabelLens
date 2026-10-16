@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.extraction.provider import Extractor, GeminiExtractor, MockExtractor
+from app.extraction.provider import Extractor, GeminiExtractor, GLMExtractor, MockExtractor
 from app.extraction.settings import Settings, get_settings
 from app.routes.extract import APIProblem, error_response, router
 from app.schemas import HealthResponse
@@ -14,6 +14,8 @@ from app.schemas import HealthResponse
 def make_extractor(settings: Settings) -> Extractor:
     if settings.extract_mode == "mock":
         return MockExtractor()
+    if settings.vision_provider == "glm":
+        return GLMExtractor(settings)
     return GeminiExtractor(settings)
 
 

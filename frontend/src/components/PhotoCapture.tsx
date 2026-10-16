@@ -1,8 +1,7 @@
 // PhotoCapture (Section 9): camera capture where supported, always with file
 // upload; 1–3 photos staged with previews. Before a live upload it discloses
-// that the photos go to Google's vision service under Google's terms, and
-// that the profile stays in the browser. It does not promise provider-side
-// deletion.
+// that photos go to the configured external vision provider. It does not
+// promise provider-side deletion.
 
 import { useRef } from "react";
 import { useScan } from "@state/scanStore";
@@ -11,6 +10,7 @@ import { CameraIcon, UploadIcon, XIcon } from "./icons";
 
 const MAX_PHOTOS = 3;
 const GEMINI_TERMS_URL = "https://ai.google.dev/gemini-api/terms";
+const ZAI_TERMS_URL = "https://docs.z.ai/legal-agreement/terms-of-use";
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
 export function PhotoCapture() {
@@ -174,13 +174,17 @@ export function PhotoCapture() {
       {mode === "live" ? (
         <div className="note note-disclosure">
           <p className="small">
-            Before you scan: the photos you upload are sent to Google's Gemini
-            vision service to be read, under{" "}
+            Before you scan: the photos you upload are sent to the configured
+            external vision provider (Google Gemini or GLM via Z.AI) to be read.
+            Review the applicable{" "}
             <a href={GEMINI_TERMS_URL} target="_blank" rel="noreferrer">
-              Google's API terms
+              Google Gemini API terms
             </a>
-            . Unpaid use of the service may be used to improve Google products.
-            Your dietary profile never leaves this browser, and LabelLens
+            {" "}or{" "}
+            <a href={ZAI_TERMS_URL} target="_blank" rel="noreferrer">
+              Z.AI terms
+            </a>
+            . Your dietary profile never leaves this browser, and LabelLens
             itself does not save your photos.
           </p>
         </div>

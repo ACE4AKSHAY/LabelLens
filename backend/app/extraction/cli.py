@@ -8,14 +8,14 @@ from pathlib import Path
 
 from app.extraction.errors import ExtractionProviderError
 from app.extraction.image_validation import SUPPORTED_IMAGE_TYPES, payload_matches_mime_type
-from app.extraction.provider import GeminiExtractor, ImageInput, MockExtractor
+from app.extraction.provider import GeminiExtractor, GLMExtractor, ImageInput, MockExtractor
 from app.extraction.settings import Settings, get_settings
 
 
-def _make_extractor(settings: Settings) -> GeminiExtractor | MockExtractor:
+def _make_extractor(settings: Settings) -> GeminiExtractor | GLMExtractor | MockExtractor:
     if settings.extract_mode == "mock":
         return MockExtractor()
-    return GeminiExtractor(settings)
+    return GLMExtractor(settings) if settings.vision_provider == "glm" else GeminiExtractor(settings)
 
 
 def main() -> int:
