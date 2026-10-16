@@ -1,4 +1,4 @@
-// Active-scan state. In memory only (never localStorage): the uploaded photos,
+// Active-scan state. In memory only (never localStorage): the staged photos,
 // the extraction, the user's confirmations and corrections, and the computed
 // results. "Clear" wipes all of it.
 
@@ -7,18 +7,22 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import type {
   ConfirmState,
   Extraction,
-  IngredientRow,
+  Profile,
   Results,
 } from "@shared/contracts";
 import { compareProfile } from "@domain/compareProfile";
-import aliasMapJson from "@domain/aliasMap.json";
 import type { AliasMap } from "@domain/compareProfile";
+import aliasMapJson from "@domain/aliasMap.json";
+import { extractLabel, extractMode, type ExtractOutcome } from "@api/extract";
+import { profileHasRestrictions, useProfile } from "./profileStore";
+import { applyCorrections } from "./applyCorrections";
 
 export const EMPTY_CONFIRM: ConfirmState = {
   ingredients_complete: false,
@@ -63,47 +67,43 @@ const INITIAL: ScanState = {
   error: null,
 };
 
+const MAX_PHOTOS = 3;
 const aliasMap = aliasMapJson as unknown as AliasMap;
 
-/** Effective ingredient rows after user corrections (R: corrections re-run the rules). */
-function applyCorrections(
-  ingredients: IngredientRow[],
-  corrections: Record<string, string>,
-  rowChecked: Record<string, boolean>,
-  rowRestored: Record<string, boolean>,
-): IngredientRow[] {
-  return ingredients.map((row) => {
-    let next = row;
-    const edited = corrections[row.id];
-    if (edited !== undefined && edited !== row.label_text) {
-      next = {
-        ...next,
-        label_text: edited,
-        edited_by_user: true,
-        review_required: rowChecked[row.id] ? false : next.review_required,
-        review_reason: rowChecked[row.id] ? null : next.review_reason,
-      };
-    } else if (rowChecked[row.id]) {
-      next = { ...next, review_required: false, review_reason: null };
+function readProfile(): Profile {
+  try {
+    const raw = window.localStorage.getItem("labellens.profile.v1");
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      (parsed as Profile).schema_version === "1"
+    ) {
+      return parsed as Profile;
     }
-    if (rowRestored[row.id]) {
-      next = { ...next, edited_by_user: false };
-    }
-    return next;
-  });
+  } catch {
+    // fall through to empty
+  }
+  return { schema_version: "1", allergens: [], custom_avoid: [], diet: "none" };
 }
 
 interface ScanContextValue {
   scan: ScanState;
   isMockMode: boolean;
-  startScan: (photos: File[]) => Promise<void>;
-  setPhase: (phase: ScanPhase) => void;
+  canStartScan: boolean;
+  hasProfile: boolean;
+  addPhotos: (files: File[]) => void;
+  replacePhoto: (photoId: string, file: File) => void;
+  startScan: () => void;
+  /** Dev picker: load an extraction directly as the active scan result. */
+  loadFixtureDirect: (extraction: Extraction, expected?: Results) => void;
   setConfirm: (next: Partial<ConfirmState>) => void;
   correctIngredient: (id: string, newText: string) => void;
   restoreIngredient: (id: string) => void;
   checkIngredientRow: (id: string) => void;
   retakePanel: (photoId: string) => void;
   removePhoto: (photoId: string) => void;
+  goCapture: () => void;
   clearScan: () => void;
   dismissError: () => void;
 }
@@ -112,26 +112,34 @@ const ScanContext = createContext<ScanContextValue | null>(null);
 
 export function ScanProvider({
   children,
-  isMockMode,
-  onLoadExpected,
+  /** Mock hook (dev picker): decides what a scan returns, incl. error simulation. */
+  loadOutcome,
 }: {
   children: ReactNode;
-  isMockMode: boolean;
-  /** Mock mode hook: returns the golden preview for these files, if any. */
-  onLoadExpected?: (files: File[]) => Promise<Results | null>;
+  loadOutcome?: (files: File[]) => Promise<ExtractOutcome>;
 }) {
   const [scan, setScan] = useState<ScanState>(INITIAL);
+  const isMockMode = extractMode() === "mock";
+  // Reactive profile from the provider (ScanProvider is nested inside
+  // ProfileProvider) so profile edits re-render this tree immediately.
+  const { profile } = useProfile();
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
 
   const recompute = useCallback(
     (
-      next: ScanState,
+      prev: ScanState,
       extraction: Extraction | null,
       confirm: ConfirmState,
       corrections: Record<string, string>,
       rowChecked: Record<string, boolean>,
       rowRestored: Record<string, boolean>,
     ): ScanState => {
-      if (!extraction) return { ...next, results: null };
+      // Carry the new interaction state through, not just the results.
+      if (!extraction) {
+        return { ...prev, confirm, corrections, rowChecked, rowRestored, results: null };
+      }
+      const profile = profileRef.current;
       const effective: Extraction = {
         ...extraction,
         ingredients: applyCorrections(
@@ -141,65 +149,92 @@ export function ScanProvider({
           rowRestored,
         ),
       };
-      const profileState = JSON.parse(
-        window.localStorage.getItem("labellens.profile.v1") ?? "null",
-      );
-      const profile =
-        profileState && profileState.schema_version === "1"
-          ? profileState
-          : { schema_version: "1", allergens: [], custom_avoid: [], diet: "none" };
       const results = compareProfile(effective, profile, confirm, aliasMap);
-      return { ...next, results };
+      return { ...prev, confirm, corrections, rowChecked, rowRestored, results };
     },
     [],
   );
 
-  const startScan = useCallback(
-    async (files: File[]) => {
-      setScan((prev) => ({
-        ...INITIAL,
-        photos: files.map((file, i) => ({
-          id: `photo-${Date.now()}-${i}`,
-          file,
-          url: URL.createObjectURL(file),
-        })),
-        phase: "reading",
-      }));
-      try {
-        const { extractLabel } = await import("@api/extract");
-        const outcome = await extractLabel(files);
-        const expectedPreview =
-          isMockMode && onLoadExpected ? await onLoadExpected(files) : null;
-        setScan((prev) =>
-          recompute(
-            {
-              ...prev,
-              phase: "results",
-              extraction: outcome.extraction,
-              expectedPreview: expectedPreview ?? outcome.expected ?? null,
-              error: null,
-            },
-            outcome.extraction,
-            prev.confirm,
-            prev.corrections,
-            prev.rowChecked,
-            prev.rowRestored,
-          ),
-        );
-      } catch (e) {
-        const err = e as { code?: string; message: string; retryable?: boolean };
-        setScan((prev) => ({
-          ...prev,
-          phase: "capture",
-          error: {
-            code: err.code ?? "provider_error",
-            message: err.message ?? "Something went wrong reading the photo.",
-            retryable: err.retryable ?? false,
-          },
-        }));
+  const makePhoto = (file: File): ScanPhoto => ({
+    id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    file,
+    url: URL.createObjectURL(file),
+  });
+
+  const addPhotos = useCallback((files: File[]) => {
+    setScan((prev) => {
+      const room = MAX_PHOTOS - prev.photos.length;
+      if (room <= 0) return prev;
+      const next = [...prev.photos, ...files.slice(0, room).map(makePhoto)];
+      return { ...prev, photos: next, error: null };
+    });
+  }, []);
+
+  const replacePhoto = useCallback((photoId: string, file: File) => {
+    setScan((prev) => ({
+      ...prev,
+      photos: prev.photos.map((p) =>
+        p.id === photoId ? { ...makePhoto(file), id: p.id } : p,
+      ),
+      error: null,
+    }));
+  }, []);
+
+  const startScan = useCallback(async () => {
+    if (scan.photos.length === 0) return;
+    const files = scan.photos.map((p) => p.file);
+    setScan((prev) => ({ ...prev, phase: "reading", error: null }));
+    try {
+      let outcome: ExtractOutcome;
+      if (isMockMode && loadOutcome) {
+        outcome = await loadOutcome(files);
+      } else {
+        outcome = await extractLabel(files);
       }
+      setScan((prev) =>
+        recompute(
+          {
+            ...prev,
+            phase: "results",
+            extraction: outcome.extraction,
+            expectedPreview: outcome.expected ?? null,
+            error: null,
+          },
+          outcome.extraction,
+          prev.confirm,
+          prev.corrections,
+          prev.rowChecked,
+          prev.rowRestored,
+        ),
+      );
+    } catch (e) {
+      const err = e as { code?: string; message: string; retryable?: boolean };
+      setScan((prev) => ({
+        ...prev,
+        phase: "capture",
+        error: {
+          code: err.code ?? "provider_error",
+          message: err.message ?? "Something went wrong reading the photo.",
+          retryable: err.retryable ?? false,
+        },
+      }));
+    }
+  }, [scan.photos, isMockMode, loadOutcome, recompute]);
+
+  const loadFixtureDirect = useCallback(
+    (extraction: Extraction, expected?: Results) => {
+      setScan((prev) => {
+        for (const p of prev.photos) URL.revokeObjectURL(p.url);
+        const base: ScanState = {
+          ...INITIAL,
+          phase: "results",
+          extraction,
+          expectedPreview: expected ?? null,
+        };
+        return recompute(base, extraction, base.confirm, {}, {}, {});
+      });
     },
-    [isMockMode, onLoadExpected, recompute],
+    [recompute],
   );
 
   const setConfirm = useCallback(
@@ -214,14 +249,7 @@ export function ScanProvider({
         if (next.allergen_statement_complete) {
           confirm.pack_has_no_allergen_statement = false;
         }
-        return recompute(
-          { ...prev, confirm },
-          prev.extraction,
-          confirm,
-          prev.corrections,
-          prev.rowChecked,
-          prev.rowRestored,
-        );
+        return recompute(prev, prev.extraction, confirm, prev.corrections, prev.rowChecked, prev.rowRestored);
       });
     },
     [recompute],
@@ -231,14 +259,7 @@ export function ScanProvider({
     (id: string, newText: string) => {
       setScan((prev) => {
         const corrections = { ...prev.corrections, [id]: newText };
-        return recompute(
-          { ...prev, corrections },
-          prev.extraction,
-          prev.confirm,
-          corrections,
-          prev.rowChecked,
-          prev.rowRestored,
-        );
+        return recompute(prev, prev.extraction, prev.confirm, corrections, prev.rowChecked, prev.rowRestored);
       });
     },
     [recompute],
@@ -250,14 +271,7 @@ export function ScanProvider({
         const corrections = { ...prev.corrections };
         delete corrections[id];
         const rowRestored = { ...prev.rowRestored, [id]: true };
-        return recompute(
-          { ...prev, corrections, rowRestored },
-          prev.extraction,
-          prev.confirm,
-          corrections,
-          prev.rowChecked,
-          rowRestored,
-        );
+        return recompute(prev, prev.extraction, prev.confirm, corrections, prev.rowChecked, rowRestored);
       });
     },
     [recompute],
@@ -267,14 +281,7 @@ export function ScanProvider({
     (id: string) => {
       setScan((prev) => {
         const rowChecked = { ...prev.rowChecked, [id]: true };
-        return recompute(
-          { ...prev, rowChecked },
-          prev.extraction,
-          prev.confirm,
-          prev.corrections,
-          rowChecked,
-          prev.rowRestored,
-        );
+        return recompute(prev, prev.extraction, prev.confirm, prev.corrections, rowChecked, prev.rowRestored);
       });
     },
     [recompute],
@@ -295,6 +302,10 @@ export function ScanProvider({
     }));
   }, []);
 
+  const goCapture = useCallback(() => {
+    setScan((prev) => ({ ...prev, phase: "capture" }));
+  }, []);
+
   const clearScan = useCallback(() => {
     setScan((prev) => {
       for (const p of prev.photos) URL.revokeObjectURL(p.url);
@@ -306,31 +317,43 @@ export function ScanProvider({
     setScan((prev) => ({ ...prev, error: null }));
   }, []);
 
+  const hasProfile = profileHasRestrictions(profile);
+
   const value = useMemo(
     () => ({
       scan,
       isMockMode,
+      canStartScan: scan.photos.length > 0 && scan.phase === "capture",
+      hasProfile,
+      addPhotos,
+      replacePhoto,
       startScan,
-      setPhase: (phase: ScanPhase) => setScan((prev) => ({ ...prev, phase })),
+      loadFixtureDirect,
       setConfirm,
       correctIngredient,
       restoreIngredient,
       checkIngredientRow,
       retakePanel,
       removePhoto,
+      goCapture,
       clearScan,
       dismissError,
     }),
     [
       scan,
       isMockMode,
+      hasProfile,
+      addPhotos,
+      replacePhoto,
       startScan,
+      loadFixtureDirect,
       setConfirm,
       correctIngredient,
       restoreIngredient,
       checkIngredientRow,
       retakePanel,
       removePhoto,
+      goCapture,
       clearScan,
       dismissError,
     ],

@@ -18,6 +18,10 @@ import type {
   Results,
 } from "@shared/contracts";
 
+// The alias-map shape lives in the frozen contract (6.5); re-exported here so
+// existing imports keep working while this stub owns the file.
+export type { AliasMap } from "@shared/contracts";
+
 const DIET_LABELS: Record<Exclude<Profile["diet"], "none">, string> = {
   vegetarian: "Vegetarian diet",
   vegan: "Vegan diet",
