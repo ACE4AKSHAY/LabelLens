@@ -1,0 +1,27 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-x4-curved-obscured-partial",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "unusable", "note": "Ingredients panel curves around the package edge and is partly obscured." }
+  ],
+  "product": { "name": null, "brand": null, "quantity": null },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_partial",
+      "text": "Sugar",
+      "image_index": 0,
+      "reason": "Only the visible word is transcribed; the curved and obscured text is not inferred."
+    },
+    "allergen_statement": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "No allergen statement image was uploaded." },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "No nutrition image was uploaded." },
+    "product_details": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "No product details image was uploaded." }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [],
+  "nutrition": [],
+  "warnings": []
+}
