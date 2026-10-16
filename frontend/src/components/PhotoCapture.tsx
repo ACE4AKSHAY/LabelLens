@@ -72,9 +72,19 @@ export function PhotoCapture() {
         <div className="note note-error" role="alert">
           <div>
             <p>{scan.error.message}</p>
+            {scan.error.requestId && (
+              <p className="small error-request-id">
+                Request ID: <code>{scan.error.requestId}</code>. Backend details: <code>backend/logs/labellens.log</code>
+              </p>
+            )}
             <div className="row" style={{ marginTop: 8 }}>
+              {scan.error.retryable && scan.photos.length > 0 && (
+                <button type="button" className="btn btn-sm btn-primary" onClick={() => void startScan()}>
+                  Retry scan
+                </button>
+              )}
               <button type="button" className="btn btn-sm" onClick={dismissError}>
-                OK
+                Dismiss
               </button>
             </div>
           </div>
@@ -175,7 +185,9 @@ export function PhotoCapture() {
         <div className="note note-disclosure">
           <p className="small">
             Before you scan: the photos you upload are sent to the configured
-            external vision provider (Google Gemini or GLM via Z.AI) to be read.
+            external vision provider to be read. If GLM via Z.AI is selected
+            and cannot complete the request, the backend may send the same
+            photos to Google Gemini as a fallback.
             Review the applicable{" "}
             <a href={GEMINI_TERMS_URL} target="_blank" rel="noreferrer">
               Google Gemini API terms

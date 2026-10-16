@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+from time import monotonic
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -12,6 +14,7 @@ from app.extraction.image_validation import SUPPORTED_IMAGE_TYPES, payload_match
 from app.extraction.provider import Extractor, ImageInput
 from app.extraction.settings import Settings
 from app.schemas import ApiErrorEnvelope, Extraction
+from app.observability import request_id_context
 
 
 @dataclass
@@ -85,15 +88,55 @@ async def extract_label(
         image_inputs.append(ImageInput(data=data, mime_type=mime_type))
 
     extractor: Extractor = request.app.state.extractor
+    started = monotonic()
+    request_id = request_id_context.get()
+    settings: Settings = request.app.state.settings
+    logging.getLogger("labellens.extract").info(
+        "Extraction started request_id=%s provider=%s image_count=%d",
+        request_id,
+        settings.vision_provider,
+        len(image_inputs),
+    )
     try:
-        return await run_in_threadpool(extractor.extract, image_inputs)
+        extraction = await run_in_threadpool(extractor.extract, image_inputs)
+        logging.getLogger("labellens.extract").info(
+            "Extraction completed request_id=%s provider=%s duration_ms=%d ingredient_rows=%d allergen_rows=%d",
+            request_id,
+            settings.vision_provider,
+            int((monotonic() - started) * 1000),
+            len(extraction.ingredients),
+            len(extraction.allergen_statements.contains)
+            + len(extraction.allergen_statements.may_contain)
+            + len(extraction.allergen_statements.other),
+        )
+        return extraction
     except UnreadableResponseError as exc:
+        logging.getLogger("labellens.extract").error(
+            "Extraction output could not be validated request_id=%s provider=%s duration_ms=%d",
+            request_id,
+            settings.vision_provider,
+            int((monotonic() - started) * 1000),
+        )
         raise APIProblem(502, "unreadable_response", str(exc), exc.retryable) from None
     except ExtractionProviderError as exc:
+        logging.getLogger("labellens.extract").error(
+            "Extraction provider failed request_id=%s provider=%s duration_ms=%d retryable=%s quota=%s error=%s",
+            request_id,
+            settings.vision_provider,
+            int((monotonic() - started) * 1000),
+            exc.retryable,
+            exc.quota,
+            str(exc),
+        )
         code = "quota" if exc.quota else "provider_error"
         status_code = 429 if exc.quota else (503 if not exc.retryable else 502)
         raise APIProblem(status_code, code, str(exc), exc.retryable) from None
     except Exception:
+        logging.getLogger("labellens.extract").exception(
+            "Unhandled extraction failure request_id=%s provider=%s",
+            request_id,
+            settings.vision_provider,
+        )
         raise APIProblem(
             502,
             "provider_error",

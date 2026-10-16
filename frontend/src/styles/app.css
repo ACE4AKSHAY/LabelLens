@@ -261,6 +261,11 @@ button.step-chip.step-current:hover {
   margin-bottom: var(--sp-1);
 }
 
+.error-request-id {
+  margin: var(--sp-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
 .btn-block {
   width: 100%;
   margin-top: var(--sp-1);
@@ -781,6 +786,10 @@ button.step-chip.step-current:hover {
 .reading-card {
   text-align: center;
   padding: var(--sp-4) var(--sp-2);
+  min-height: 240px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
 }
 
 .reading-title {
@@ -806,6 +815,25 @@ button.step-chip.step-current:hover {
   animation: reading-slide 1.2s ease-in-out infinite;
 }
 
+.reading-spinner {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto var(--sp-2);
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: reading-spin 0.9s linear infinite;
+}
+
+.reading-elapsed {
+  margin: var(--sp-1) 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes reading-spin {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes reading-slide {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(350%); }
@@ -815,6 +843,10 @@ button.step-chip.step-current:hover {
   .reading-bar-fill {
     animation: none;
     width: 100%;
+  }
+  .reading-spinner {
+    animation: none;
+    border-top-color: var(--accent);
   }
 }
 

@@ -52,7 +52,7 @@ export interface ScanState {
   /** Ingredient row keys whose original reading was restored after an edit. */
   rowRestored: Record<string, boolean>;
   results: Results | null;
-  error: { code: string; message: string; retryable: boolean } | null;
+  error: { code: string; message: string; retryable: boolean; requestId?: string } | null;
 }
 
 const INITIAL: ScanState = {
@@ -234,7 +234,12 @@ export function ScanProvider({
         ),
       );
     } catch (e) {
-      const err = e as { code?: string; message: string; retryable?: boolean };
+      const err = e as {
+        code?: string;
+        message: string;
+        retryable?: boolean;
+        requestId?: string;
+      };
       setScan((prev) => ({
         ...prev,
         phase: "capture",
@@ -242,6 +247,7 @@ export function ScanProvider({
           code: err.code ?? "provider_error",
           message: err.message ?? "Something went wrong reading the photo.",
           retryable: err.retryable ?? false,
+          requestId: err.requestId,
         },
       }));
     }

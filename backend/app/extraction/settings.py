@@ -26,6 +26,7 @@ class Settings:
     glm_api_key: str | None = None
     glm_model: str = "glm-5.3-flash"
     glm_api_url: str = "https://api.z.ai/api/paas/v4/chat/completions"
+    gemini_fallback_model: str = "gemini-3.8-flash"
 
 
 def _positive_int(name: str, default: int) -> int:
@@ -60,6 +61,7 @@ def get_settings() -> Settings:
         glm_api_key=os.getenv("GLM_API_KEY", "").strip() or os.getenv("ZAI_API_KEY", "").strip() or None,
         glm_model=os.getenv("GLM_MODEL", "").strip() or "glm-5.3-flash",
         glm_api_url=os.getenv("GLM_API_URL", "").strip() or "https://api.z.ai/api/paas/v4/chat/completions",
+        gemini_fallback_model=os.getenv("GEMINI_FALLBACK_MODEL", "").strip() or "gemini-3.8-flash",
         max_image_bytes=_positive_int("MAX_IMAGE_BYTES", 10 * 1024 * 1024),
         max_total_image_bytes=max_total_image_bytes,
     )

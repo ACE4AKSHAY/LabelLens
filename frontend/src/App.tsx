@@ -2,7 +2,7 @@
 // (?dev=1), and the reading state. Profile in localStorage; active scan in
 // memory only.
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProfileProvider } from "@state/profileStore";
 import { ScanProvider, useScan } from "@state/scanStore";
 import { StepStrip, type Step } from "@components/StepStrip";
@@ -39,6 +39,20 @@ function AppBody({
   const { scan, clearScan, loadFixtureDirect } = useScan();
   const [step, setStep] = useState<Step>("profile");
   const [devOpen, setDevOpen] = useState(isDevSession);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (scan.phase !== "reading") {
+      setElapsedSeconds(0);
+      return;
+    }
+    const startedAt = Date.now();
+    const updateElapsed = () =>
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    updateElapsed();
+    const timer = window.setInterval(updateElapsed, 1000);
+    return () => window.clearInterval(timer);
+  }, [scan.phase]);
 
   const maxReached: Step =
     scan.phase === "results" && scan.results
@@ -106,10 +120,20 @@ function AppBody({
         {scan.phase === "reading" ? (
           <>
             <section className="card reading-card" aria-live="polite" aria-busy="true">
+              <div className="reading-spinner" role="status" aria-label="Reading photos" />
               <p className="reading-title">Reading the label…</p>
               <p className="muted small">
-                We transcribe the text exactly as printed and show what we could
-                and couldn't read. This takes a few seconds.
+                We transcribe visible words, preserve source evidence, and flag
+                anything the model cannot read. The primary model can use its
+                configured fallback if it fails.
+              </p>
+              <p className="reading-elapsed small muted">
+                {elapsedSeconds < 30
+                  ? "Waiting for the vision service"
+                  : elapsedSeconds < 60
+                    ? "Still processing. Larger photos or a busy service can take longer."
+                    : "This may take a few minutes if the backend tries a fallback model. Keep this page open; a failure will show its reason and request ID."}{" "}
+                · {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, "0")}
               </p>
               <div className="reading-bar" aria-hidden="true">
                 <div className="reading-bar-fill" />
