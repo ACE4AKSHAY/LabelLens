@@ -117,7 +117,7 @@ class GeminiExtractor:
                                 system_instruction=SYSTEM_INSTRUCTION,
                                 response_mime_type="application/json",
                                 response_json_schema=_gemini_response_schema(),
-                                temperature=0,
+                                thinking_config=types.ThinkingConfig(thinking_level="low"),
                                 max_output_tokens=16_000,
                             ),
                         )

@@ -20,7 +20,7 @@ The checked-in `.env.example` uses mock mode and contains no credential. `EXTRAC
 - `EXTRACT_MODE=mock|live` — defaults to `mock`.
 - `VISION_PROVIDER=gemini|glm` — defaults to `gemini`; set to `glm` to use Z.AI.
 - `GEMINI_API_KEY` — required only in live mode; set it in `backend/.env` or the backend process environment.
-- `GEMINI_MODEL` — defaults to `gemini-3.5-flash-lite`; select another model supporting image input and structured output here. The default completed a synthetic label request through the app in 7.6 seconds; this is not a real-photo accuracy measurement.
+- `GEMINI_MODEL` — defaults to `gemini-3.8-flash`, which supports image input and structured output. Gemini 3 uses its default temperature; the backend sets low thinking effort to reduce latency for label extraction. A prior model completed a synthetic label request in 7.6 seconds; that is not a real-photo accuracy measurement.
 - `GLM_API_KEY` (or `ZAI_API_KEY`) — required for live mode when `VISION_PROVIDER=glm`.
 - `GLM_MODEL` — defaults to `glm-5.3-flash`, Z.AI's multimodal GLM-5.3 Flash model.
 - `GLM_API_URL` — defaults to the Z.AI chat-completions endpoint.

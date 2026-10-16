@@ -56,7 +56,7 @@ def get_settings() -> Settings:
         extract_mode=mode,  # type: ignore[arg-type]
         vision_provider=provider,  # type: ignore[arg-type]
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip() or None,
-        gemini_model=os.getenv("GEMINI_MODEL", "").strip() or "gemini-3.5-flash-lite",
+        gemini_model=os.getenv("GEMINI_MODEL", "").strip() or "gemini-3.8-flash",
         glm_api_key=os.getenv("GLM_API_KEY", "").strip() or os.getenv("ZAI_API_KEY", "").strip() or None,
         glm_model=os.getenv("GLM_MODEL", "").strip() or "glm-5.3-flash",
         glm_api_url=os.getenv("GLM_API_URL", "").strip() or "https://api.z.ai/api/paas/v4/chat/completions",
