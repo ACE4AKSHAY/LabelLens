@@ -17,3 +17,6 @@ build/
 coverage/
 .DS_Store
 Thumbs.db
+
+# TS build info
+*.tsbuildinfo

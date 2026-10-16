@@ -24,6 +24,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": "/src",
+      "@domain": `${projectRoot}src/domain`,
+      "@components": `${projectRoot}src/components`,
+      "@pages": `${projectRoot}src/pages`,
+      "@api": `${projectRoot}src/api`,
+      "@state": `${projectRoot}src/state`,
       "@shared": `${repoRoot}shared`,
     },
   },
