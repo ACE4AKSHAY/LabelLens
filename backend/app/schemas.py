@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ContractModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", strict=True)
 
 
 SectionStatus = Literal[
@@ -45,7 +45,7 @@ class SuggestedGroup(ContractModel):
 
 class IngredientRow(ReviewablePhrase):
     id: str
-    edited_by_user: bool | None = None
+    edited_by_user: bool = False
     suggested_group: SuggestedGroup | None = None
 
 
