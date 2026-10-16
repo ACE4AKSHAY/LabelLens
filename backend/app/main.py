@@ -12,10 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.extraction.provider import (
     Extractor,
-    GeminiExtractor,
-    GLMExtractor,
-    MockExtractor,
-    ProviderFallbackExtractor,
+    create_extractor,
 )
 from app.extraction.settings import BACKEND_DIR, Settings, get_settings
 from app.observability import request_id_context
@@ -45,13 +42,7 @@ def _configure_logging() -> None:
 
 
 def make_extractor(settings: Settings) -> Extractor:
-    if settings.extract_mode == "mock":
-        return MockExtractor()
-    if settings.vision_provider == "glm":
-        return ProviderFallbackExtractor(
-            GLMExtractor(settings), GeminiExtractor(settings), "glm"
-        )
-    return GeminiExtractor(settings)
+    return create_extractor(settings)
 
 
 def create_app(settings: Settings | None = None, extractor: Extractor | None = None) -> FastAPI:

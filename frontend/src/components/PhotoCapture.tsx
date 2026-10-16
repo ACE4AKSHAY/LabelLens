@@ -185,9 +185,9 @@ export function PhotoCapture() {
         <div className="note note-disclosure">
           <p className="small">
             Before you scan: the photos you upload are sent to the configured
-            external vision provider to be read. If GLM via Z.AI is selected
-            and cannot complete the request, the backend may send the same
-            photos to Google Gemini as a fallback.
+            external vision provider to be read. If it cannot complete the
+            request and a backup provider is configured, the backend may send
+            the same photos to the other provider as a fallback.
             Review the applicable{" "}
             <a href={GEMINI_TERMS_URL} target="_blank" rel="noreferrer">
               Google Gemini API terms
