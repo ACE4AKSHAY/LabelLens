@@ -191,16 +191,14 @@ profile item), run `npm run check:rules`. Green = done.
 6. **Pronoun/dialect sweep of real Indian labels**: collect 10 real backs-of-packs and grep
    your fixtures' vocabulary against them; add missing aliases as `reviewed: false`.
 
-### Beyond Module C (so the hackathon actually demos)
+### Beyond Module C
 
-7. **Person 1 must scaffold the frontend** (`npm create vite@latest frontend -- --template
-   react-ts`) — careful: `frontend/src/domain/` already exists; scaffold around it, do not
-   overwrite. Until then nothing is demoable.
+7. **The UI and backend are integrated**; run the frontend in mock mode with `npm run dev`
+   and exercise the fixture picker. The UI now computes every result through `compareProfile`.
 8. **Person 2's real-label test set** (`testset/` + `EXPECTED.md`) — fixtures prove the rules,
-   real photos prove the pipeline.
-9. **Integration run**: mock mode end-to-end (fixture picker → compareProfile → cards), then
-   live mode on one real photo. The README's Module C section has the exact import snippet
-   Person 1 needs.
+   real photos prove the extraction pipeline.
+9. **Live integration run** still needs verified Gemini access, quota/terms review, and real
+   label photos. Do not use synthetic fixture results as OCR-accuracy evidence.
 
 ---
 

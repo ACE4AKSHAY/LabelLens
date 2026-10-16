@@ -12,7 +12,7 @@ import type {
   Results,
 } from "../../../shared/contracts";
 
-// Keep the UI's existing type import stable when replacing its day-0 stub.
+// Preserve the UI's existing type import from this module.
 export type { AliasMap } from "../../../shared/contracts";
 
 /**

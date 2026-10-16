@@ -3,9 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "LabelLens golden-case check (Module C). Frontend and backend live in frontend/ and backend/.",
+  "description": "LabelLens evidence-first packaged-food label reader.",
   "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "test:a": "npm --prefix frontend run test:a",
     "check:rules": "node scripts/check_rules.mjs",
-    "validate:fixtures": "python scripts/validate_fixtures.py"
+    "validate:fixtures": "python scripts/validate_fixtures.py",
+    "install:frontend": "npm --prefix frontend install"
+  },
+  "engines": {
+    "node": ">=22.6"
   }
 }

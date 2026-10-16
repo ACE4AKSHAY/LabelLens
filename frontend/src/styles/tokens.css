@@ -1,0 +1,57 @@
+/* LabelLens design tokens — Section 9 quick design system.
+   Calm, consumer-friendly grocery helper. One accent (teal) for navigation and
+   primary actions ONLY — never to imply safety. Status is always text + icon +
+   border pattern, never color alone. */
+
+:root {
+  /* Surfaces */
+  --canvas: #f7f6f2;
+  --surface: #ffffff;
+  --surface-sunken: #f1efe9;
+  --border: #e3e0d7;
+  --border-strong: #c9c5b8;
+
+  /* Ink */
+  --ink: #202a28;
+  --ink-soft: #57605d;
+  --ink-faint: #6d7673;
+
+  /* Accent — navigation / primary actions only */
+  --accent: #147d64;
+  --accent-hover: #106855;
+  --accent-soft: #e7f1ee;
+  --focus-ring: #147d64;
+
+  /* Status colors (paired with icon + border pattern in components) */
+  --status-conflict: #b42318;
+  --status-conflict-soft: #fbeae8;
+  --status-possible: #9a6700;
+  --status-possible-soft: #fdf3e0;
+  --status-unknown: #475569;
+  --status-unknown-soft: #eef1f5;
+  --status-nomatch: #64748b;
+  --status-nomatch-soft: #f0f2f5;
+
+  /* Spacing — 8px steps */
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+  --sp-5: 40px;
+  --sp-6: 48px;
+
+  /* Radii */
+  --r-card: 18px;
+  --r-inner: 14px;
+  --r-chip: 999px;
+
+  /* Shadow — exactly one soft level */
+  --shadow: 0 1px 2px rgba(32, 42, 40, 0.05), 0 6px 20px rgba(32, 42, 40, 0.07);
+
+  /* Type */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+
+  /* Touch */
+  --tap: 44px;
+}
