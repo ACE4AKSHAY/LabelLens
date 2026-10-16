@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "entries": [
+    { "term": "peanut", "group": "peanut", "kind": "exact", "canonical": "peanut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "groundnut", "group": "peanut", "kind": "alias", "canonical": "peanut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Common Indian English name for peanut (groundnut oil, groundnut flour)." },
+    { "term": "arachis oil", "group": "peanut", "kind": "alias", "canonical": "peanut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Arachis is the peanut genus; confirm with a reliable reference before reviewing." },
+    { "term": "edible vegetable oil", "group": "peanut", "kind": "ambiguous", "canonical": null, "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Indian labels often print this without naming the plant; groundnut is a common base. Team to decide whether to keep it (noise risk); can only ever raise possible_conflict." },
+
+    { "term": "milk", "group": "milk", "kind": "exact", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "milk solids", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "skimmed milk powder", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "whey", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "casein", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "caseinate", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "butter", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Dairy butter. Whole-word matching still hits 'cocoa butter' / 'shea butter'; needs a disambiguation decision before review (see README)." },
+    { "term": "ghee", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Clarified butter, common on Indian labels." },
+    { "term": "cream", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "curd", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Indian 'curd' (dahi) is milk-based." },
+    { "term": "paneer", "group": "milk", "kind": "alias", "canonical": "milk", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Indian fresh cheese." },
+    { "term": "lactose", "group": "milk", "kind": "ambiguous", "canonical": null, "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Milk sugar; team to decide whether this should be an alias or stay ambiguous." },
+
+    { "term": "wheat", "group": "wheat_gluten", "kind": "exact", "canonical": "wheat_gluten", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "wheat gluten", "group": "wheat_gluten", "kind": "exact", "canonical": "wheat_gluten", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "maida", "group": "wheat_gluten", "kind": "alias", "canonical": "wheat_gluten", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Indian refined wheat flour." },
+    { "term": "atta", "group": "wheat_gluten", "kind": "alias", "canonical": "wheat_gluten", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Indian whole-wheat flour." },
+    { "term": "refined wheat flour", "group": "wheat_gluten", "kind": "alias", "canonical": "wheat_gluten", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "semolina", "group": "wheat_gluten", "kind": "alias", "canonical": "wheat_gluten", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "suji", "group": "wheat_gluten", "kind": "alias", "canonical": "wheat_gluten", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Indian name for semolina." },
+    { "term": "rava", "group": "wheat_gluten", "kind": "alias", "canonical": "wheat_gluten", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Indian name for semolina." },
+
+    { "term": "soy", "group": "soy", "kind": "exact", "canonical": "soy", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "soya", "group": "soy", "kind": "alias", "canonical": "soy", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Note: not caught by trailing-s tolerance; a separate entry on purpose." },
+    { "term": "soybean", "group": "soy", "kind": "alias", "canonical": "soy", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "lecithin", "group": "soy", "kind": "ambiguous", "canonical": null, "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Usually soy lecithin but the printed source is often not stated." },
+    { "term": "emulsifier", "group": "soy", "kind": "ambiguous", "canonical": null, "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "In India often soy lecithin; source not stated. Keep the ambiguous list short to avoid constant noise." },
+
+    { "term": "egg", "group": "egg", "kind": "exact", "canonical": "egg", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "albumen", "group": "egg", "kind": "alias", "canonical": "egg", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "egg powder", "group": "egg", "kind": "alias", "canonical": "egg", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+
+    { "term": "sesame", "group": "sesame", "kind": "exact", "canonical": "sesame", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "til", "group": "sesame", "kind": "alias", "canonical": "sesame", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Indian name for sesame (til oil)." },
+    { "term": "gingelly", "group": "sesame", "kind": "alias", "canonical": "sesame", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Gingelly oil is common on South Indian labels." },
+
+    { "term": "tree nut", "group": "tree_nut", "kind": "exact", "canonical": "tree_nut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "Explicit nut names only, so words like 'nutmeg' never match 'nut'." },
+    { "term": "almond", "group": "tree_nut", "kind": "alias", "canonical": "tree_nut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "cashew", "group": "tree_nut", "kind": "alias", "canonical": "tree_nut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "walnut", "group": "tree_nut", "kind": "alias", "canonical": "tree_nut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "pistachio", "group": "tree_nut", "kind": "alias", "canonical": "tree_nut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "hazelnut", "group": "tree_nut", "kind": "alias", "canonical": "tree_nut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "pecan", "group": "tree_nut", "kind": "alias", "canonical": "tree_nut", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+
+    { "term": "fish", "group": "fish", "kind": "exact", "canonical": "fish", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "anchovy", "group": "fish", "kind": "alias", "canonical": "fish", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+
+    { "term": "shellfish", "group": "shellfish", "kind": "exact", "canonical": "shellfish", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "prawn", "group": "shellfish", "kind": "alias", "canonical": "shellfish", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "shrimp", "group": "shellfish", "kind": "alias", "canonical": "shellfish", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" },
+    { "term": "crab", "group": "shellfish", "kind": "alias", "canonical": "shellfish", "scientific_name": null, "reviewed": false, "source": "UNVERIFIED - team to confirm", "note": "" }
+  ],
+  "diet_terms": [
+    { "term": "gelatin", "applies_to": ["vegetarian", "vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "meat", "applies_to": ["vegetarian", "vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "chicken", "applies_to": ["vegetarian", "vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "fish", "applies_to": ["vegetarian", "vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "lard", "applies_to": ["vegetarian", "vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "honey", "applies_to": ["vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "milk", "applies_to": ["vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "ghee", "applies_to": ["vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "egg", "applies_to": ["vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "whey", "applies_to": ["vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" },
+    { "term": "casein", "applies_to": ["vegan"], "reviewed": false, "source": "UNVERIFIED - team to confirm" }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g7-g8-clean-label",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "good", "note": null },
+    { "index": 1, "role": "nutrition", "quality": "good", "note": null }
+  ],
+  "product": { "name": "Sample Rice Cracker", "brand": null, "quantity": "90 g" },
+  "package_facts": [
+    {
+      "kind": "product_name",
+      "value_text": "Sample Rice Cracker",
+      "label_text": "Sample Rice Cracker",
+      "evidence_quote": "Sample Rice Cracker",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    }
+  ],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Rice Flour, Sugar, Sunflower Oil, Salt",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Nil.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": {
+      "status": "readable_complete",
+      "text": "Energy 487 kcal per 100 g; Carbohydrate 74 g per 100 g",
+      "image_index": 1,
+      "reason": null
+    },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Rice Cracker; Net quantity 90 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Rice Flour", "evidence_quote": "Rice Flour", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-3", "label_text": "Sunflower Oil", "evidence_quote": "Sunflower Oil", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-4", "label_text": "Salt", "evidence_quote": "Salt", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [
+    { "id": "nut-1", "nutrient": "Energy", "amount_text": "487", "unit": "kcal", "basis": "per 100 g", "label_text": "Energy 487 kcal per 100 g", "evidence_quote": "Energy 487 kcal per 100 g", "image_index": 1, "review_required": false, "review_reason": null },
+    { "id": "nut-2", "nutrient": "Carbohydrate", "amount_text": "74", "unit": "g", "basis": "per 100 g", "label_text": "Carbohydrate 74 g per 100 g", "evidence_quote": "Carbohydrate 74 g per 100 g", "image_index": 1, "review_required": false, "review_reason": null }
+  ],
+  "warnings": []
+}

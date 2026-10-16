@@ -1,0 +1,37 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g9-allergen-line-not-uploaded",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "good", "note": null }
+  ],
+  "product": { "name": "Sample Rice Cracker", "brand": null, "quantity": "90 g" },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Rice Flour, Sugar, Sunflower Oil, Salt",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "No allergen statement panel photo was uploaded." },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Rice Cracker; Net quantity 90 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Rice Flour", "evidence_quote": "Rice Flour", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-3", "label_text": "Sunflower Oil", "evidence_quote": "Sunflower Oil", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-4", "label_text": "Salt", "evidence_quote": "Salt", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": []
+}

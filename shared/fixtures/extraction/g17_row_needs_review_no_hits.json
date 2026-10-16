@@ -1,0 +1,43 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g17-row-needs-review-no-hits",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "good", "note": null }
+  ],
+  "product": { "name": "Sample Instant Soup Mix", "brand": null, "quantity": "50 g" },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Tomato Powder, Sugar, Hydrogenated Vegetable Oil, Iodised Salt, Spices & Condiments",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Nil.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Instant Soup Mix; Net quantity 50 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Tomato Powder", "evidence_quote": "Tomato Powder", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Sugar", "evidence_quote": "Sugar", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-3", "label_text": "Hydrogenated Vegetable Oil", "evidence_quote": "Hydrogenated Vegetable Oil", "image_index": 0, "review_required": true, "review_reason": "Partly covered by a fold in the printed text." },
+    { "id": "ing-4", "label_text": "Iodised Salt", "evidence_quote": "Iodised Salt", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-5", "label_text": "Spices & Condiments", "evidence_quote": "Spices & Condiments", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": []
+}

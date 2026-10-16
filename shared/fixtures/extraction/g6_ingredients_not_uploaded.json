@@ -1,0 +1,44 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g6-ingredients-not-uploaded",
+  "images": [
+    { "index": 0, "role": "front", "quality": "good", "note": "Only the front of the pack was uploaded." }
+  ],
+  "product": { "name": "Sample Glucose Biscuits", "brand": null, "quantity": "50 g" },
+  "package_facts": [
+    {
+      "kind": "product_name",
+      "value_text": "Sample Glucose Biscuits",
+      "label_text": "Sample Glucose Biscuits",
+      "evidence_quote": "Sample Glucose Biscuits",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    },
+    {
+      "kind": "quantity",
+      "value_text": "50 g",
+      "label_text": "Net quantity 50 g",
+      "evidence_quote": "Net quantity 50 g",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    }
+  ],
+  "sections": {
+    "ingredients": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "No ingredients panel photo was uploaded." },
+    "allergen_statement": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "No allergen statement panel photo was uploaded." },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "No nutrition panel photo was uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Glucose Biscuits; Net quantity 50 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [],
+  "nutrition": [],
+  "warnings": []
+}

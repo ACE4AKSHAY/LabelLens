@@ -1,0 +1,44 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-g13-edited-groundnut-row",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "good", "note": null }
+  ],
+  "product": { "name": "Sample Banana Chips", "brand": null, "quantity": "120 g" },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Banana, Groundnut Oil, Salt, Spices",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Nil.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Banana Chips; Net quantity 120 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Banana", "evidence_quote": "Banana", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Groundnut Oil", "evidence_quote": "Groundnut 0il", "image_index": 0, "review_required": false, "review_reason": null, "edited_by_user": true },
+    { "id": "ing-3", "label_text": "Salt", "evidence_quote": "Salt", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-4", "label_text": "Spices", "evidence_quote": "Spices", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": [
+    "Fixture models a user correction: row ing-2 was misread as 'Groundnut 0il' (digit zero) and edited to 'Groundnut Oil'."
+  ]
+}
