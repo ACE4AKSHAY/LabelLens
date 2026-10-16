@@ -1,0 +1,163 @@
+// Local recording fixture based on the photo supplied for the hackathon demo.
+// Values are manually transcribed for a repeatable walkthrough, not OCR output.
+
+import type { Extraction } from "@shared/contracts";
+import type { FixturePack } from "./types";
+
+const ingredientText =
+  "CORN GRITS, BENGAL GRAM GRITS, VEGETABLE OIL AND SEASONING, IODIZED SALT, FLAVOUR ENHANCERS (508, 635), CITRIC ACID, TARTARIC ACID, HYDROLYZED VEGETABLE PROTEIN";
+
+const nutritionText = [
+  "Energy (kcal) 541 108",
+  "Protein (g) 6.9 1.4",
+  "Carbohydrate (g) 55.9 11.2",
+  "Total sugars (g) 1.8 0.4",
+  "Added sugars (g) 0.15 0.03",
+  "Total Fat (g) 32.8 6.6",
+  "Saturated Fat (g) 7.7 1.5",
+  "Trans Fat (g) 0.1 0.02",
+  "Sodium (mg) 732.6 146.5",
+].join("\n");
+
+const ingredients = [
+  "CORN GRITS",
+  "BENGAL GRAM GRITS",
+  "VEGETABLE OIL AND SEASONING",
+  "IODIZED SALT",
+  "FLAVOUR ENHANCERS (508, 635)",
+  "CITRIC ACID",
+  "TARTARIC ACID",
+  "HYDROLYZED VEGETABLE PROTEIN",
+].map((text, index) => ({
+  id: `itc-demo-ing-${index + 1}`,
+  label_text: text,
+  evidence_quote: text,
+  image_index: 0,
+  review_required: true,
+  review_reason: "Small curved print; check this phrase against the photo.",
+}));
+
+const nutrition = [
+  ["Energy", "541", "kcal", "per 100 g", "Energy (kcal) 541"],
+  ["Energy", "108", "kcal", "per serving (20 g)", "Energy (kcal) 108"],
+  ["Protein", "6.9", "g", "per 100 g", "Protein (g) 6.9"],
+  ["Protein", "1.4", "g", "per serving (20 g)", "Protein (g) 1.4"],
+  ["Carbohydrate", "55.9", "g", "per 100 g", "Carbohydrate (g) 55.9"],
+  ["Carbohydrate", "11.2", "g", "per serving (20 g)", "Carbohydrate (g) 11.2"],
+  ["Total sugars", "1.8", "g", "per 100 g", "Total sugars (g) 1.8"],
+  ["Total sugars", "0.4", "g", "per serving (20 g)", "Total sugars (g) 0.4"],
+  ["Added sugars", "0.15", "g", "per 100 g", "Added sugars (g) 0.15"],
+  ["Added sugars", "0.03", "g", "per serving (20 g)", "Added sugars (g) 0.03"],
+  ["Total fat", "32.8", "g", "per 100 g", "Total Fat (g) 32.8"],
+  ["Total fat", "6.6", "g", "per serving (20 g)", "Total Fat (g) 6.6"],
+  ["Saturated fat", "7.7", "g", "per 100 g", "Saturated Fat (g) 7.7"],
+  ["Saturated fat", "1.5", "g", "per serving (20 g)", "Saturated Fat (g) 1.5"],
+  ["Trans fat", "0.1", "g", "per 100 g", "Trans Fat (g) 0.1"],
+  ["Trans fat", "0.02", "g", "per serving (20 g)", "Trans Fat (g) 0.02"],
+  ["Sodium", "732.6", "mg", "per 100 g", "Sodium (mg) 732.6"],
+  ["Sodium", "146.5", "mg", "per serving (20 g)", "Sodium (mg) 146.5"],
+].map(([nutrient, amount_text, unit, basis, quote], index) => ({
+  id: `itc-demo-nut-${index + 1}`,
+  nutrient,
+  amount_text,
+  unit,
+  basis,
+  label_text: quote,
+  evidence_quote: quote,
+  image_index: 0,
+  review_required: true,
+  review_reason: "Manually transcribed from small print; verify against the package.",
+}));
+
+const extraction: Extraction = {
+  schema_version: "1",
+  analysis_id: "local-demo-itc-tedhe-medhe",
+  images: [
+    {
+      index: 0,
+      role: "other",
+      quality: "blurry",
+      note: "Single curved, creased pouch photo; small print is difficult to verify.",
+    },
+  ],
+  product: {
+    name: "Tedhe Medhe Mast Masala Tadka",
+    brand: "Tedhe Medhe",
+    quantity: null,
+  },
+  package_facts: [
+    {
+      kind: "product_name",
+      value_text: "Tedhe Medhe Mast Masala Tadka",
+      label_text: "TEDHE MEDHE MAST MASALA TADKA",
+      evidence_quote: "TEDHE MEDHE MAST MASALA TADKA",
+      image_index: 0,
+      review_required: false,
+      review_reason: null,
+    },
+  ],
+  sections: {
+    ingredients: {
+      status: "readable_partial",
+      text: ingredientText,
+      image_index: 0,
+      reason: "Only selected visible phrases are transcribed; other small curved text is unresolved.",
+    },
+    allergen_statement: {
+      status: "readable_complete",
+      text: "CONTAINS SOY. MAY CONTAIN MILK",
+      image_index: 0,
+      reason: null,
+    },
+    nutrition: {
+      status: "readable_partial",
+      text: nutritionText,
+      image_index: 0,
+      reason: "Selected values are transcribed; some small or distorted rows were left out.",
+    },
+    product_details: {
+      status: "readable_partial",
+      text: "TEDHE MEDHE MAST MASALA TADKA. MRP ₹20.00 incl. of all taxes.",
+      image_index: 0,
+      reason: "The small date and batch area is not clear enough to transcribe.",
+    },
+  },
+  ingredients,
+  allergen_statements: {
+    contains: [
+      {
+        label_text: "SOY",
+        evidence_quote: "CONTAINS SOY",
+        image_index: 0,
+        review_required: false,
+        review_reason: null,
+      },
+    ],
+    may_contain: [
+      {
+        label_text: "MILK",
+        evidence_quote: "MAY CONTAIN MILK",
+        image_index: 0,
+        review_required: false,
+        review_reason: null,
+      },
+    ],
+    other: [],
+  },
+  marks: [],
+  nutrition,
+  warnings: [
+    "Preloaded manual demo data; not generated by OCR or a live AI request.",
+    "Dates, batch code, and unclear ingredient text were not inferred.",
+  ],
+};
+
+export const sampleItcTedheMedhe: FixturePack = {
+  id: "sample-itc-tedhe-medhe",
+  title: "Tedhe Medhe Mast Masala Tadka — local demo photo",
+  description:
+    "Preloaded manual sample for a screen recording. Soy and possible milk are visible; curved small print remains partial and requires review.",
+  source: "built-in",
+  demoPhotoPath: "/local-demo-label.jpeg",
+  extraction,
+};

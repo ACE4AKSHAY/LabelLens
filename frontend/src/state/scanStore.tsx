@@ -96,7 +96,7 @@ interface ScanContextValue {
   replacePhoto: (photoId: string, file: File) => void;
   startScan: () => void;
   /** Dev picker: load an extraction directly as the active scan result. */
-  loadFixtureDirect: (extraction: Extraction) => void;
+  loadFixtureDirect: (extraction: Extraction, photoFile?: File) => void;
   setConfirm: (next: Partial<ConfirmState>) => void;
   correctRow: (id: string, newText: string) => void;
   restoreRow: (id: string) => void;
@@ -248,12 +248,16 @@ export function ScanProvider({
   }, [scan.photos, isMockMode, loadOutcome, recompute]);
 
   const loadFixtureDirect = useCallback(
-    (extraction: Extraction) => {
+    (extraction: Extraction, photoFile?: File) => {
+      const demoPhoto = photoFile
+        ? { ...makePhoto(photoFile), readingIndex: 0 }
+        : null;
       setScan((prev) => {
         for (const p of prev.photos) URL.revokeObjectURL(p.url);
         const base: ScanState = {
           ...INITIAL,
           phase: "results",
+          photos: demoPhoto ? [demoPhoto] : [],
           extraction,
         };
         return recompute(base, extraction, base.confirm, {}, {}, {});

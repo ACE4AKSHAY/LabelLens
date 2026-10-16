@@ -21,6 +21,8 @@ export interface FixturePack {
   demoProfile?: Profile;
   /** ConfirmState the expected results assume. */
   demoConfirm?: ConfirmState;
+  /** Optional local-only photo path for recording a preloaded demo fixture. */
+  demoPhotoPath?: string;
 }
 
 export const DEMO_PROFILE: Profile = {

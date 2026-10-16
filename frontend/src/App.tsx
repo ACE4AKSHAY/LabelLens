@@ -138,11 +138,30 @@ function AppBody({
         activePackId={activePack?.id ?? null}
         onPick={(pack) => {
           onPickFixture(pack);
-          // Dev convenience: show this fixture immediately, no photo needed.
-          loadFixtureDirect(pack.extraction);
-          setStep("results");
-          setDevOpen(false);
-          window.scrollTo({ top: 0 });
+          void (async () => {
+            let photoFile: File | undefined;
+            if (pack.demoPhotoPath) {
+              try {
+                const response = await fetch(pack.demoPhotoPath);
+                if (!response.ok) throw new Error("local demo photo missing");
+                const blob = await response.blob();
+                photoFile = new File([blob], "local-demo-label.jpeg", {
+                  type: blob.type || "image/jpeg",
+                });
+              } catch {
+                window.alert(
+                  "The local demo photo is missing. Follow docs/LOCAL_DEMO.md to add it; the photo is intentionally excluded from Git.",
+                );
+                return;
+              }
+            }
+            // Demo fixtures are preloaded for repeatable recordings; they are
+            // not produced by an OCR or vision request.
+            loadFixtureDirect(pack.extraction, photoFile);
+            setStep("results");
+            setDevOpen(false);
+            window.scrollTo({ top: 0 });
+          })();
         }}
         simulateError={simulateError}
         onToggleError={onToggleSimulateError}

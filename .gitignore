@@ -5,6 +5,8 @@
 **/.env
 **/.env.*
 !**/.env.example
+# Private local recording asset; never publish the supplied product photo.
+/frontend/public/local-demo-label.jpeg
 node_modules/
 .venv/
 venv/
