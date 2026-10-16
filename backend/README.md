@@ -6,7 +6,7 @@ The backend receives label images and returns the shared `Extraction` contract. 
 
 ```powershell
 cd backend
-py -3.12 -m venv .venv
+python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env

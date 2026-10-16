@@ -29,11 +29,21 @@ Use the uploaded modular design document in `docs/` as the detailed product and 
 
 ## Local setup
 
+### Windows quick start
+
+From the repository root, double-click `install-once.bat` once per clone. It installs the backend and frontend dependencies and creates local `.env` files from the checked-in placeholder templates without overwriting existing files. It uses the `python` command, not the Windows `py` launcher.
+
+Then double-click `run-mock.bat`. It opens the backend and frontend in separate command windows; visit <http://localhost:5173>. No API key or live provider call is needed for the mock demo.
+
+For live mode, edit `backend/.env` and replace the placeholder `GEMINI_API_KEY` with your key, then double-click `run-live.bat`. Live mode sends uploaded label photos to Gemini. Review the current provider terms and LabelLens policy status before using real photos; mock mode remains the default for demos.
+
+### Manual setup
+
 The backend runs in mock mode by default. Keep credentials in `backend/.env`; never commit `.env` files or API keys. Start the backend in one terminal:
 
 ```powershell
 cd backend
-py -3.12 -m venv .venv
+python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 if (!(Test-Path .env)) { Copy-Item .env.example .env }
