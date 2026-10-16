@@ -78,11 +78,14 @@ class MockExtractor:
 
 
 class GeminiExtractor:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, api_key: str | None = None) -> None:
         self.settings = settings
+        # An explicit key supports a second Google account (GEMINI_API_KEY_2)
+        # used as an account-level fallback before cross-provider failover.
+        self.api_key = api_key if api_key is not None else settings.gemini_api_key
 
     def extract(self, images: Sequence[ImageInput]) -> Extraction:
-        if not self.settings.gemini_api_key:
+        if not self.api_key:
             raise ExtractionProviderError(
                 "Live extraction is not configured. Set GEMINI_API_KEY in backend/.env.",
                 retryable=False,
@@ -117,7 +120,7 @@ class GeminiExtractor:
         model_errors: list[tuple[str, ExtractionProviderError]] = []
         try:
             with genai.Client(
-                api_key=self.settings.gemini_api_key,
+                api_key=self.api_key,
                 http_options=types.HttpOptions(timeout=GEMINI_HTTP_TIMEOUT_MS),
             ) as client:
                 for model_index, model in enumerate(models):
@@ -632,6 +635,15 @@ def create_extractor(settings: Settings) -> Extractor:
         primary = GLMExtractor(settings)
         fallback = GeminiExtractor(settings) if settings.gemini_api_key else None
         return ProviderFallbackExtractor(primary, fallback, "glm", "gemini")
-    primary = GeminiExtractor(settings)
-    fallback = GLMExtractor(settings) if settings.glm_api_key else None
-    return ProviderFallbackExtractor(primary, fallback, "gemini", "glm")
+    chain: list[tuple[str, Extractor]] = [("gemini", GeminiExtractor(settings))]
+    if settings.gemini_api_key_2:
+        chain.append(("gemini-backup", GeminiExtractor(settings, api_key=settings.gemini_api_key_2)))
+    if settings.glm_api_key:
+        chain.append(("glm", GLMExtractor(settings)))
+    if len(chain) == 1:
+        return chain[0][1]
+    extractor: Extractor = chain[-1][1]
+    for index in range(len(chain) - 2, -1, -1):
+        name, current = chain[index]
+        extractor = ProviderFallbackExtractor(current, extractor, name, chain[index + 1][0])
+    return extractor

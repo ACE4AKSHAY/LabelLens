@@ -8,6 +8,7 @@ from unittest.mock import patch
 from app.extraction.errors import ExtractionProviderError
 from app.extraction.evidence import validate_evidence
 from app.extraction.provider import (
+    GeminiExtractor,
     ImageInput,
     MockExtractor,
     ProviderFallbackExtractor,
@@ -135,11 +136,11 @@ class ProviderFallbackTests(unittest.TestCase):
 
         self.assertIsInstance(create_extractor(settings), MockExtractor)
 
-    def test_gemini_does_not_construct_glm_fallback_without_glm_key(self) -> None:
+    def test_gemini_without_other_keys_returns_bare_extractor(self) -> None:
         settings = Settings(
             extract_mode="live",
             gemini_api_key="configured-only-in-test",
-            gemini_model="gemini-3.8-flash",
+            gemini_model="gemini-3.5-flash",
             max_image_bytes=1024,
             max_total_image_bytes=2048,
             vision_provider="gemini",
@@ -148,8 +149,76 @@ class ProviderFallbackTests(unittest.TestCase):
 
         chain = create_extractor(settings)
 
-        self.assertIsInstance(chain, ProviderFallbackExtractor)
-        self.assertIsNone(chain.fallback)
+        self.assertIsInstance(chain, GeminiExtractor)
+        with patch("app.extraction.provider.GLMExtractor") as glm_cls:
+            create_extractor(settings)
+            glm_cls.assert_not_called()
+
+    def test_second_gemini_key_is_used_after_primary_quota(self) -> None:
+        settings = Settings(
+            extract_mode="live",
+            gemini_api_key="key-one",
+            gemini_api_key_2="key-two",
+            gemini_model="gemini-3.5-flash",
+            max_image_bytes=1024,
+            max_total_image_bytes=2048,
+            vision_provider="gemini",
+            glm_api_key="glm-key",
+        )
+        constructor_keys: list[object] = []
+
+        def make_gemini(settings: Settings, api_key: str | None = None) -> FakeExtractor:
+            constructor_keys.append(api_key)
+            if len(constructor_keys) == 1:
+                return FakeExtractor(
+                    error=ExtractionProviderError(
+                        "primary quota", retryable=True, quota=True, fallback_eligible=True
+                    )
+                )
+            return FakeExtractor(result=fixture_extraction())
+
+        with (
+            patch("app.extraction.provider.GeminiExtractor", side_effect=make_gemini),
+            patch("app.extraction.provider.GLMExtractor") as glm_cls,
+        ):
+            chain = create_extractor(settings)
+            result = chain.extract(self.images)
+
+        self.assertEqual(constructor_keys, [None, "key-two"])
+        glm_cls.return_value.extract.assert_not_called()
+        self.assertEqual(len(result.images), 1)
+
+    def test_glm_is_reached_after_both_gemini_keys_quota(self) -> None:
+        settings = Settings(
+            extract_mode="live",
+            gemini_api_key="key-one",
+            gemini_api_key_2="key-two",
+            gemini_model="gemini-3.5-flash",
+            max_image_bytes=1024,
+            max_total_image_bytes=2048,
+            vision_provider="gemini",
+            glm_api_key="glm-key",
+        )
+        quota = ExtractionProviderError(
+            "quota", retryable=True, quota=True, fallback_eligible=True
+        )
+
+        with (
+            patch(
+                "app.extraction.provider.GeminiExtractor",
+                side_effect=lambda settings, api_key=None: FakeExtractor(error=quota),
+            ) as gemini_cls,
+            patch(
+                "app.extraction.provider.GLMExtractor",
+                side_effect=lambda settings: FakeExtractor(result=fixture_extraction()),
+            ) as glm_cls,
+        ):
+            chain = create_extractor(settings)
+            result = chain.extract(self.images)
+
+        self.assertEqual(gemini_cls.call_count, 2)
+        self.assertEqual(glm_cls.call_count, 1)
+        self.assertEqual(len(result.images), 1)
 
 
 if __name__ == "__main__":

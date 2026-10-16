@@ -23,3 +23,6 @@ Thumbs.db
 
 # TS build info
 *.tsbuildinfo
+
+# Real label photos are shared by cloud drive, not committed (docs section 19.5)
+/testset/images/
