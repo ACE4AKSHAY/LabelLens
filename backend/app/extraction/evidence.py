@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import logging
 from collections.abc import Iterable
 
 from app.schemas import Extraction, ReviewablePhrase
@@ -118,6 +119,20 @@ def validate_evidence(
     for section, rows, label in section_rows:
         if section.status == "readable_complete" and section.text and not rows and not section.reason:
             section.reason = f"No {label} were detected in the readable text."
+
+    ingredients_section = extraction.sections.ingredients
+    allergen_section = extraction.sections.allergen_statement
+    if (
+        ingredients_section.status == "readable_complete"
+        and allergen_section.status == "readable_complete"
+        and not extraction.ingredients
+        and not extraction.allergen_statements.contains
+        and not extraction.allergen_statements.may_contain
+        and not extraction.allergen_statements.other
+    ):
+        logging.getLogger("labellens.provider").warning(
+            "Possible under-transcription: both ingredient and allergen sections are readable_complete with zero extracted rows."
+        )
 
     for attribute, fact_kind in (
         ("name", "product_name"),

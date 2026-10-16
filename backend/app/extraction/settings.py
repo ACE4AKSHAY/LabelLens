@@ -9,6 +9,9 @@ from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 PROJECT_DIR = BACKEND_DIR.parent
+# .env wins over the process environment except EXTRACT_MODE, which launch
+# scripts (run-live.bat) must be able to override; a machine-level
+# GEMINI_API_KEY env var must not silently replace the key configured here.
 _requested_extract_mode = os.getenv("EXTRACT_MODE")
 load_dotenv(BACKEND_DIR / ".env", override=True)
 if _requested_extract_mode:
@@ -26,6 +29,8 @@ class Settings:
     glm_api_key: str | None = None
     glm_model: str = "glm-5.3-flash"
     glm_api_url: str = "https://api.z.ai/api/paas/v4/chat/completions"
+    gemini_fallback_model: str = "gemini-3.5-flash-lite"
+    gemini_api_key_2: str | None = None
 
 
 def _positive_int(name: str, default: int) -> int:
@@ -56,10 +61,12 @@ def get_settings() -> Settings:
         extract_mode=mode,  # type: ignore[arg-type]
         vision_provider=provider,  # type: ignore[arg-type]
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip() or None,
-        gemini_model=os.getenv("GEMINI_MODEL", "").strip() or "gemini-3.5-flash-lite",
+        gemini_api_key_2=os.getenv("GEMINI_API_KEY_2", "").strip() or None,
+        gemini_model=os.getenv("GEMINI_MODEL", "").strip() or "gemini-3.5-flash",
         glm_api_key=os.getenv("GLM_API_KEY", "").strip() or os.getenv("ZAI_API_KEY", "").strip() or None,
         glm_model=os.getenv("GLM_MODEL", "").strip() or "glm-5.3-flash",
         glm_api_url=os.getenv("GLM_API_URL", "").strip() or "https://api.z.ai/api/paas/v4/chat/completions",
+        gemini_fallback_model=os.getenv("GEMINI_FALLBACK_MODEL", "").strip() or "gemini-3.5-flash-lite",
         max_image_bytes=_positive_int("MAX_IMAGE_BYTES", 10 * 1024 * 1024),
         max_total_image_bytes=max_total_image_bytes,
     )

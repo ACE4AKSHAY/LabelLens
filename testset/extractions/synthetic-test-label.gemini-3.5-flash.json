@@ -1,0 +1,152 @@
+{
+  "schema_version": "1",
+  "analysis_id": "2dea45920ca042d8988cfe59c69bbd71",
+  "images": [
+    {
+      "index": 0,
+      "role": "other",
+      "quality": "good",
+      "note": null
+    }
+  ],
+  "product": {
+    "name": "SYNTHETIC TEST LABEL",
+    "brand": null,
+    "quantity": null
+  },
+  "package_facts": [
+    {
+      "label_text": "SYNTHETIC TEST LABEL",
+      "evidence_quote": "SYNTHETIC TEST LABEL",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null,
+      "kind": "product_name",
+      "value_text": "SYNTHETIC TEST LABEL"
+    }
+  ],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "INGREDIENTS: WHEAT FLOUR, SUGAR, SALT, PALM OIL",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "CONTAINS: WHEAT\nMAY CONTAIN: MILK, SOY",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": {
+      "status": "readable_complete",
+      "text": "ENERGY 450 kcal PER 100 g\nPROTEIN 7 g PER 100 g",
+      "image_index": 0,
+      "reason": null
+    },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "SYNTHETIC TEST LABEL",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    {
+      "label_text": "WHEAT FLOUR",
+      "evidence_quote": "WHEAT FLOUR",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null,
+      "id": "ing-1",
+      "edited_by_user": false,
+      "suggested_group": null
+    },
+    {
+      "label_text": "SUGAR",
+      "evidence_quote": "SUGAR",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null,
+      "id": "ing-2",
+      "edited_by_user": false,
+      "suggested_group": null
+    },
+    {
+      "label_text": "SALT",
+      "evidence_quote": "SALT",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null,
+      "id": "ing-3",
+      "edited_by_user": false,
+      "suggested_group": null
+    },
+    {
+      "label_text": "PALM OIL",
+      "evidence_quote": "PALM OIL",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null,
+      "id": "ing-4",
+      "edited_by_user": false,
+      "suggested_group": null
+    }
+  ],
+  "allergen_statements": {
+    "contains": [
+      {
+        "label_text": "WHEAT",
+        "evidence_quote": "CONTAINS: WHEAT",
+        "image_index": 0,
+        "review_required": false,
+        "review_reason": null
+      }
+    ],
+    "may_contain": [
+      {
+        "label_text": "MILK",
+        "evidence_quote": "MAY CONTAIN: MILK, SOY",
+        "image_index": 0,
+        "review_required": false,
+        "review_reason": null
+      },
+      {
+        "label_text": "SOY",
+        "evidence_quote": "MAY CONTAIN: MILK, SOY",
+        "image_index": 0,
+        "review_required": false,
+        "review_reason": null
+      }
+    ],
+    "other": []
+  },
+  "marks": [],
+  "nutrition": [
+    {
+      "label_text": "ENERGY 450 kcal PER 100 g",
+      "evidence_quote": "ENERGY 450 kcal PER 100 g",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null,
+      "id": "nut-1",
+      "nutrient": "ENERGY",
+      "amount_text": "450",
+      "unit": "kcal",
+      "basis": "PER 100 g"
+    },
+    {
+      "label_text": "PROTEIN 7 g PER 100 g",
+      "evidence_quote": "PROTEIN 7 g PER 100 g",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null,
+      "id": "nut-2",
+      "nutrient": "PROTEIN",
+      "amount_text": "7",
+      "unit": "g",
+      "basis": "PER 100 g"
+    }
+  ],
+  "warnings": []
+}

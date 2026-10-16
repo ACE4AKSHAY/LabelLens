@@ -5,6 +5,7 @@
 **/.env
 **/.env.*
 !**/.env.example
+/backend/logs/
 # Private local recording asset; never publish the supplied product photo.
 /frontend/public/local-demo-label.jpeg
 node_modules/
@@ -22,3 +23,6 @@ Thumbs.db
 
 # TS build info
 *.tsbuildinfo
+
+# Real label photos are shared by cloud drive, not committed (docs section 19.5)
+/testset/images/

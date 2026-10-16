@@ -4,7 +4,9 @@ import base64
 import json
 import logging
 from dataclasses import dataclass
+from time import monotonic, sleep
 from typing import Any, Protocol, Sequence
+from urllib.parse import urlparse
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from uuid import uuid4
@@ -14,6 +16,7 @@ from pydantic import ValidationError
 from app.extraction.errors import ExtractionProviderError, UnreadableResponseError
 from app.extraction.evidence import validate_evidence
 from app.extraction.settings import PROJECT_DIR, Settings
+from app.observability import request_id_context
 from app.schemas import Extraction
 
 
@@ -35,6 +38,9 @@ Describe a vegetarian/non-vegetarian symbol only in marks.visual_description; ne
 Set analysis_id to an empty string; the backend will assign it. Include every required field, including empty arrays and nullable values. Do not include any dietary profile or user preference."""
 
 RETRY_INSTRUCTION = "The prior response did not validate. Return one complete JSON object matching the provided schema. Preserve exact source text; do not add prose or markdown."
+GEMINI_HTTP_TIMEOUT_MS = 30_000
+GLM_HTTP_TIMEOUT_SECONDS = 12
+GEMINI_OVERLOAD_BACKOFF_SECONDS = (1, 2)
 
 
 def _gemini_response_schema() -> dict[str, Any]:
@@ -72,11 +78,14 @@ class MockExtractor:
 
 
 class GeminiExtractor:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, api_key: str | None = None) -> None:
         self.settings = settings
+        # An explicit key supports a second Google account (GEMINI_API_KEY_2)
+        # used as an account-level fallback before cross-provider failover.
+        self.api_key = api_key if api_key is not None else settings.gemini_api_key
 
     def extract(self, images: Sequence[ImageInput]) -> Extraction:
-        if not self.settings.gemini_api_key:
+        if not self.api_key:
             raise ExtractionProviderError(
                 "Live extraction is not configured. Set GEMINI_API_KEY in backend/.env.",
                 retryable=False,
@@ -102,52 +111,175 @@ class GeminiExtractor:
             *image_parts,
         ]
 
+        models = [self.settings.gemini_model]
+        fallback_model = self.settings.gemini_fallback_model.strip()
+        if fallback_model and fallback_model not in models:
+            models.append(fallback_model)
+
+        request_id = request_id_context.get()
+        model_errors: list[tuple[str, ExtractionProviderError]] = []
         try:
             with genai.Client(
-                api_key=self.settings.gemini_api_key,
-                http_options=types.HttpOptions(timeout=90_000),
+                api_key=self.api_key,
+                http_options=types.HttpOptions(timeout=GEMINI_HTTP_TIMEOUT_MS),
             ) as client:
-                for attempt in range(2):
-                    contents = base_contents if attempt == 0 else [*base_contents, RETRY_INSTRUCTION]
+                for model_index, model in enumerate(models):
                     try:
-                        response = client.models.generate_content(
-                            model=self.settings.gemini_model,
-                            contents=contents,
-                            config=types.GenerateContentConfig(
-                                system_instruction=SYSTEM_INSTRUCTION,
-                                response_mime_type="application/json",
-                                response_json_schema=_gemini_response_schema(),
-                                temperature=0,
-                                max_output_tokens=16_000,
-                            ),
+                        extraction = self._extract_with_model(client, types, model, base_contents, len(images))
+                        logging.getLogger("labellens.provider").info(
+                            "Vision extraction succeeded request_id=%s provider=gemini model=%s model_fallback=%s",
+                            request_id,
+                            model,
+                            model_index > 0,
                         )
-                    except Exception as exc:
-                        raise self._provider_error(exc) from None
-
-                    raw_text = getattr(response, "text", None)
-                    if not isinstance(raw_text, str) or not raw_text.strip():
-                        if attempt == 0:
-                            continue
-                        raise UnreadableResponseError()
-
-                    try:
-                        extraction = Extraction.model_validate_json(raw_text)
-                        data = extraction.model_dump()
-                        data["analysis_id"] = uuid4().hex
-                        extraction = Extraction.model_validate(data)
-                        return validate_evidence(
-                            extraction, len(images), require_each_image=True
+                        return extraction
+                    except ExtractionProviderError as exc:
+                        model_errors.append((model, exc))
+                        has_fallback = model_index + 1 < len(models)
+                        logging.getLogger("labellens.provider").warning(
+                            "Vision model failed request_id=%s provider=gemini model=%s fallback_eligible=%s error=%s",
+                            request_id,
+                            model,
+                            exc.fallback_eligible,
+                            str(exc),
                         )
-                    except (ValidationError, ValueError, TypeError):
-                        if attempt == 0:
+                        same_provider_fallback = isinstance(exc, UnreadableResponseError) or not exc.retryable
+                        if has_fallback and exc.fallback_eligible and same_provider_fallback:
+                            logging.getLogger("labellens.provider").warning(
+                                "Trying Gemini fallback request_id=%s primary_model=%s fallback_model=%s",
+                                request_id,
+                                model,
+                                models[model_index + 1],
+                            )
                             continue
-                        raise UnreadableResponseError() from None
+                        if model_index > 0 and model_errors:
+                            primary_model, primary_error = model_errors[0]
+                            raise ExtractionProviderError(
+                                f"Gemini primary model {primary_model} failed: {primary_error} Fallback model {model} also failed: {exc}",
+                                retryable=primary_error.retryable or exc.retryable,
+                                quota=primary_error.quota or exc.quota,
+                                fallback_eligible=(
+                                    primary_error.retryable and primary_error.fallback_eligible
+                                ) or (exc.retryable and exc.fallback_eligible),
+                            ) from None
+                        raise
         except ExtractionProviderError:
             raise
         except Exception as exc:
             raise self._provider_error(exc) from None
 
         raise UnreadableResponseError()
+
+    def _extract_with_model(
+        self,
+        client: Any,
+        types: Any,
+        model: str,
+        base_contents: list[object],
+        image_count: int,
+    ) -> Extraction:
+        output_retry_count = 0
+        overload_retry_count = 0
+        attempt = 0
+        while attempt < 2 + len(GEMINI_OVERLOAD_BACKOFF_SECONDS):
+            contents = base_contents if output_retry_count == 0 else [*base_contents, RETRY_INSTRUCTION]
+            started = monotonic()
+            logging.getLogger("labellens.provider").info(
+                "Vision model attempt started request_id=%s provider=gemini model=%s attempt=%d",
+                request_id_context.get(),
+                model,
+                attempt + 1,
+            )
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_INSTRUCTION,
+                        response_mime_type="application/json",
+                        response_json_schema=_gemini_response_schema(),
+                        thinking_config=types.ThinkingConfig(thinking_level="low"),
+                        max_output_tokens=16_000,
+                    ),
+                )
+            except Exception as exc:
+                error = self._provider_error(exc)
+                elapsed_seconds = monotonic() - started
+                is_overloaded = self._is_overloaded_error(exc)
+                can_retry_overload = (
+                    is_overloaded
+                    and overload_retry_count < len(GEMINI_OVERLOAD_BACKOFF_SECONDS)
+                    and elapsed_seconds < 2.0
+                )
+                logging.getLogger("labellens.provider").warning(
+                    "Vision model attempt failed request_id=%s provider=gemini model=%s attempt=%d duration_ms=%d retryable=%s quota=%s overload_retry=%s",
+                    request_id_context.get(),
+                    model,
+                    attempt + 1,
+                    int(elapsed_seconds * 1000),
+                    error.retryable,
+                    error.quota,
+                    can_retry_overload,
+                )
+                if can_retry_overload:
+                    delay = GEMINI_OVERLOAD_BACKOFF_SECONDS[overload_retry_count]
+                    logging.getLogger("labellens.provider").warning(
+                        "Retrying overloaded Gemini request request_id=%s provider=gemini model=%s retry=%d backoff_seconds=%d",
+                        request_id_context.get(), model, overload_retry_count + 1, delay,
+                    )
+                    overload_retry_count += 1
+                    sleep(delay)
+                    attempt += 1
+                    continue
+                raise error from None
+
+            raw_text = getattr(response, "text", None)
+            if not isinstance(raw_text, str) or not raw_text.strip():
+                logging.getLogger("labellens.provider").warning(
+                    "Vision model returned an empty response request_id=%s provider=gemini model=%s attempt=%d duration_ms=%d",
+                    request_id_context.get(),
+                    model,
+                    attempt + 1,
+                    int((monotonic() - started) * 1000),
+                )
+                if output_retry_count == 0:
+                    output_retry_count += 1
+                    attempt += 1
+                    continue
+                raise UnreadableResponseError()
+
+            try:
+                extraction = Extraction.model_validate_json(raw_text)
+                data = extraction.model_dump()
+                data["analysis_id"] = uuid4().hex
+                extraction = Extraction.model_validate(data)
+                return validate_evidence(extraction, image_count, require_each_image=True)
+            except (ValidationError, ValueError, TypeError) as exc:
+                logging.getLogger("labellens.provider").warning(
+                    "Vision response did not validate request_id=%s provider=gemini model=%s attempt=%d validation_error=%s",
+                    request_id_context.get(),
+                    model,
+                    attempt + 1,
+                    type(exc).__name__,
+                )
+                if output_retry_count == 0:
+                    output_retry_count += 1
+                    attempt += 1
+                    continue
+                raise UnreadableResponseError() from None
+            attempt += 1
+        raise UnreadableResponseError()
+
+    @staticmethod
+    def _is_overloaded_error(exc: Exception) -> bool:
+        status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+        try:
+            if int(status) == 503:
+                return True
+        except (TypeError, ValueError):
+            pass
+        message = str(exc).casefold()
+        return "overloaded" in message or "service unavailable" in message
 
     @staticmethod
     def _provider_error(exc: Exception) -> ExtractionProviderError:
@@ -158,38 +290,121 @@ class GeminiExtractor:
         except (TypeError, ValueError):
             status_number = None
 
-        logging.getLogger(__name__).warning(
-            "Gemini request failed: exception=%s status=%s",
+        logging.getLogger("labellens.provider").warning(
+            "Vision API request failed request_id=%s provider=gemini exception=%s status=%s",
+            request_id_context.get(),
             type(exc).__name__,
             status_number,
         )
 
         if status_number == 429 or "resource_exhausted" in message or "quota" in message:
             return ExtractionProviderError(
-                "Gemini quota is temporarily exhausted. Please try again later.",
+                "Gemini rejected this request because the project reached a quota or rate limit. Check the project's Gemini API limits, then try again.",
                 retryable=True,
                 quota=True,
+                fallback_eligible=True,
             )
         invalid_key = "api key not valid" in message or "invalid api key" in message
         if invalid_key or status_number in {401, 403} or "permission_denied" in message or "unauthenticated" in message:
             return ExtractionProviderError(
                 "Gemini rejected the backend credential or project access. Check GEMINI_API_KEY in backend/.env.",
                 retryable=False,
+                fallback_eligible=False,
             )
         if status_number == 400:
             return ExtractionProviderError(
                 "Gemini rejected the configured model request. Check GEMINI_MODEL and the structured-output configuration.",
                 retryable=False,
+                fallback_eligible=True,
             )
         if status_number == 404 or "not_found" in message:
             return ExtractionProviderError(
                 "The configured Gemini model is unavailable to this project. Check GEMINI_MODEL and model access.",
                 retryable=False,
+                fallback_eligible=True,
+            )
+        if status_number == 504 or "timeout" in message or "timed out" in message:
+            return ExtractionProviderError(
+                "Gemini returned HTTP 504 and timed out. Try again; smaller photos may reduce processing time.",
+                retryable=True,
+                fallback_eligible=True,
+            )
+        if status_number == 503:
+            return ExtractionProviderError(
+                "Gemini returned HTTP 503 and is temporarily unavailable. Please retry the scan shortly.",
+                retryable=True,
+                fallback_eligible=True,
+            )
+        if (status_number is not None and status_number >= 500) or "unavailable" in message or "internal" in message:
+            return ExtractionProviderError(
+                f"Gemini returned a temporary server error (HTTP {status_number or 'unknown'}). Please retry the scan.",
+                retryable=True,
+                fallback_eligible=True,
             )
         return ExtractionProviderError(
-            "The vision provider could not complete the request. Please try again.",
+            "Gemini could not complete the image request. Check backend/logs/labellens.log for the request details, then retry.",
             retryable=True,
+            fallback_eligible=True,
         )
+
+
+class ProviderFallbackExtractor:
+    """Try the configured provider, then another configured provider on transient errors."""
+
+    def __init__(
+        self, primary: Extractor, fallback: Extractor | None, primary_name: str, fallback_name: str
+    ) -> None:
+        self.primary = primary
+        self.fallback = fallback
+        self.primary_name = primary_name
+        self.fallback_name = fallback_name
+
+    def extract(self, images: Sequence[ImageInput]) -> Extraction:
+        try:
+            return self.primary.extract(images)
+        except ExtractionProviderError as primary_error:
+            if (
+                self.fallback is None
+                or not primary_error.retryable
+                or not primary_error.fallback_eligible
+            ):
+                raise
+            logger = logging.getLogger("labellens.provider")
+            logger.warning(
+                "Vision provider failed; trying fallback request_id=%s provider=%s fallback=%s retryable=%s quota=%s error=%s",
+                request_id_context.get(),
+                self.primary_name,
+                self.fallback_name,
+                primary_error.retryable,
+                primary_error.quota,
+                str(primary_error),
+            )
+            try:
+                extraction = self.fallback.extract(images)
+                extraction = validate_evidence(extraction, len(images), require_each_image=True)
+                logger.info(
+                    "Vision fallback succeeded request_id=%s provider=%s fallback=%s",
+                    request_id_context.get(),
+                    self.primary_name,
+                    self.fallback_name,
+                )
+                return extraction
+            except ExtractionProviderError as fallback_error:
+                logger.error(
+                    "Vision fallback failed request_id=%s provider=%s fallback=%s primary_error=%s primary_quota=%s fallback_error=%s fallback_quota=%s",
+                    request_id_context.get(),
+                    self.primary_name,
+                    self.fallback_name,
+                    str(primary_error),
+                    primary_error.quota,
+                    str(fallback_error),
+                    fallback_error.quota,
+                )
+                raise ExtractionProviderError(
+                    f"{self.primary_name.upper()} failed: {primary_error} {self.fallback_name.upper()} fallback also failed: {fallback_error}. See backend/logs/labellens.log; request ID {request_id_context.get()}.",
+                    retryable=primary_error.retryable or fallback_error.retryable,
+                    quota=primary_error.quota or fallback_error.quota,
+                ) from None
 
 
 class GLMExtractor:
@@ -203,9 +418,24 @@ class GLMExtractor:
             raise ExtractionProviderError(
                 "Live extraction is not configured. Set GLM_API_KEY in backend/.env.",
                 retryable=False,
+                fallback_eligible=True,
             )
         if not images:
             raise ValueError("At least one image is required.")
+
+        glm_url = urlparse(self.settings.glm_api_url)
+        if "/api/anthropic" in glm_url.path:
+            raise ExtractionProviderError(
+                "This Z.AI URL uses the Anthropic Messages protocol, while LabelLens's GLM adapter uses OpenAI-compatible Chat Completions. The GLM Coding Plan is limited to Z.AI-supported tools and cannot be used by LabelLens. Select Gemini, or use a separate general Z.AI API key with https://api.z.ai/api/paas/v4/chat/completions.",
+                retryable=False,
+                fallback_eligible=True,
+            )
+        if "/api/coding/paas/" in glm_url.path:
+            raise ExtractionProviderError(
+                "This is Z.AI's Coding Plan endpoint. Its subscription is restricted to officially supported tools and cannot be used by LabelLens. Select Gemini, or use a separate general Z.AI API key with https://api.z.ai/api/paas/v4/chat/completions.",
+                retryable=False,
+                fallback_eligible=True,
+            )
 
         schema_text = json.dumps(Extraction.model_json_schema(), ensure_ascii=False)
         system_prompt = (
@@ -237,15 +467,44 @@ class GLMExtractor:
                 "max_tokens": 16000,
                 "stream": False,
             }
+            started = monotonic()
+            logging.getLogger("labellens.provider").info(
+                "Vision model attempt started request_id=%s provider=glm model=%s attempt=%d",
+                request_id_context.get(),
+                self.settings.glm_model,
+                attempt + 1,
+            )
             try:
                 response_data = self._request(payload)
             except _GLMHTTPError as exc:
+                logging.getLogger("labellens.provider").warning(
+                    "Vision model attempt failed request_id=%s provider=glm model=%s attempt=%d duration_ms=%d",
+                    request_id_context.get(),
+                    self.settings.glm_model,
+                    attempt + 1,
+                    int((monotonic() - started) * 1000),
+                )
                 raise self._provider_error(exc) from None
-            except (URLError, TimeoutError, OSError):
+            except (URLError, TimeoutError, OSError, UnicodeDecodeError):
+                logging.getLogger("labellens.provider").warning(
+                    "Vision API request failed request_id=%s provider=glm model=%s category=network duration_ms=%d",
+                    request_id_context.get(),
+                    self.settings.glm_model,
+                    int((monotonic() - started) * 1000),
+                )
                 raise ExtractionProviderError(
-                    "GLM could not be reached. Check the network and try again.", retryable=True
+                    "GLM could not be reached or returned an invalid response encoding. Check the network and try again.",
+                    retryable=True,
+                    fallback_eligible=True,
                 ) from None
             except json.JSONDecodeError:
+                logging.getLogger("labellens.provider").warning(
+                    "Vision API response was not JSON request_id=%s provider=glm model=%s attempt=%d duration_ms=%d",
+                    request_id_context.get(),
+                    self.settings.glm_model,
+                    attempt + 1,
+                    int((monotonic() - started) * 1000),
+                )
                 if attempt:
                     raise UnreadableResponseError() from None
                 continue
@@ -263,8 +522,20 @@ class GLMExtractor:
                 data = extraction.model_dump()
                 data["analysis_id"] = uuid4().hex
                 extraction = Extraction.model_validate(data)
-                return validate_evidence(extraction, len(images), require_each_image=True)
+                extraction = validate_evidence(extraction, len(images), require_each_image=True)
+                logging.getLogger("labellens.provider").info(
+                    "Vision extraction succeeded request_id=%s provider=glm model=%s fallback=false",
+                    request_id_context.get(),
+                    self.settings.glm_model,
+                )
+                return extraction
             except (KeyError, IndexError, TypeError, ValidationError, ValueError):
+                logging.getLogger("labellens.provider").warning(
+                    "Vision response did not validate request_id=%s provider=glm model=%s attempt=%d",
+                    request_id_context.get(),
+                    self.settings.glm_model,
+                    attempt + 1,
+                )
                 if attempt:
                     raise UnreadableResponseError() from None
 
@@ -282,7 +553,7 @@ class GLMExtractor:
             method="POST",
         )
         try:
-            with urlopen(request, timeout=180) as response:
+            with urlopen(request, timeout=GLM_HTTP_TIMEOUT_SECONDS) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             try:
@@ -300,6 +571,12 @@ class GLMExtractor:
     @staticmethod
     def _provider_error(exc: _GLMHTTPError) -> ExtractionProviderError:
         message = exc.message.lower()
+        logging.getLogger("labellens.provider").warning(
+            "Vision API request failed request_id=%s provider=glm status=%d provider_code=%s",
+            request_id_context.get(),
+            exc.status,
+            exc.code,
+        )
         account_errors = {
             "1113": "GLM API balance is empty or no API resource package is available. Add API credit in the Z.AI console before retrying.",
             "1309": "The GLM subscription has expired. Check the Z.AI account and general API access before retrying.",
@@ -308,30 +585,38 @@ class GLMExtractor:
             "1315": "This GLM key is restricted to coding tools. Configure a general API key with vision access for LabelLens.",
         }
         if str(exc.code) in account_errors:
-            return ExtractionProviderError(account_errors[str(exc.code)], retryable=False)
+            return ExtractionProviderError(
+                account_errors[str(exc.code)], retryable=False, fallback_eligible=True
+            )
         if exc.status == 429 or str(exc.code) in {"1302", "1303"} or "quota" in message:
             return ExtractionProviderError(
                 "GLM quota or rate limit is temporarily exhausted. Please try again later.",
                 retryable=True,
                 quota=True,
+                fallback_eligible=True,
             )
         if exc.status in {401, 403}:
             return ExtractionProviderError(
                 "GLM rejected the backend credential or project access. Check GLM_API_KEY in backend/.env.",
                 retryable=False,
+                fallback_eligible=True,
             )
         if exc.status == 400:
             return ExtractionProviderError(
                 "GLM rejected the request. Check GLM_MODEL and the provider account's vision access.",
                 retryable=False,
+                fallback_eligible=True,
             )
         if exc.status == 404:
             return ExtractionProviderError(
                 "The configured GLM model or API endpoint is unavailable. Check GLM_MODEL and GLM_API_URL.",
                 retryable=False,
+                fallback_eligible=True,
             )
         return ExtractionProviderError(
-            "GLM could not complete the extraction request. Please try again.", retryable=True
+            "GLM could not complete the extraction request. Please try again.",
+            retryable=True,
+            fallback_eligible=True,
         )
 
 
@@ -340,3 +625,25 @@ class _GLMHTTPError(Exception):
         self.status = status
         self.code = code
         self.message = message
+
+
+def create_extractor(settings: Settings) -> Extractor:
+    """Build the mock or configured live-provider chain for API and CLI callers."""
+    if settings.extract_mode == "mock":
+        return MockExtractor()
+    if settings.vision_provider == "glm":
+        primary = GLMExtractor(settings)
+        fallback = GeminiExtractor(settings) if settings.gemini_api_key else None
+        return ProviderFallbackExtractor(primary, fallback, "glm", "gemini")
+    chain: list[tuple[str, Extractor]] = [("gemini", GeminiExtractor(settings))]
+    if settings.gemini_api_key_2:
+        chain.append(("gemini-backup", GeminiExtractor(settings, api_key=settings.gemini_api_key_2)))
+    if settings.glm_api_key:
+        chain.append(("glm", GLMExtractor(settings)))
+    if len(chain) == 1:
+        return chain[0][1]
+    extractor: Extractor = chain[-1][1]
+    for index in range(len(chain) - 2, -1, -1):
+        name, current = chain[index]
+        extractor = ProviderFallbackExtractor(current, extractor, name, chain[index + 1][0])
+    return extractor

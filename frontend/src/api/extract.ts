@@ -24,10 +24,12 @@ export function extractMode(): "mock" | "live" {
 export class ExtractError extends Error {
   code: string;
   retryable: boolean;
-  constructor(code: string, message: string, retryable = false) {
+  requestId?: string;
+  constructor(code: string, message: string, retryable = false, requestId?: string) {
     super(message);
     this.code = code;
     this.retryable = retryable;
+    this.requestId = requestId;
   }
 }
 
@@ -99,6 +101,7 @@ async function extractLive(files: File[]): Promise<ExtractOutcome> {
   }
 
   const payload: unknown = await response.json().catch(() => null);
+  const requestId = response.headers.get("X-Request-ID") ?? undefined;
 
   if (!response.ok) {
     const envelope = payload as { error?: { code?: string; message?: string; retryable?: boolean } } | null;
@@ -108,6 +111,7 @@ async function extractLive(files: File[]): Promise<ExtractOutcome> {
       err?.message ??
         "The label could not be read right now. Try again, or use a sample.",
       err?.retryable ?? true,
+      requestId,
     );
   }
 
