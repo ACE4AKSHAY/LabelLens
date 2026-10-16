@@ -22,7 +22,7 @@ const builtInPacks: FixturePack[] = [
 ];
 
 const sharedFixtureModules = import.meta.glob(
-  "../../../shared/fixtures/extraction/*.json",
+  "../../../../shared/fixtures/extraction/*.json",
   { import: "default", eager: true },
 ) as Record<string, Extraction>;
 
