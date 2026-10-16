@@ -12,6 +12,9 @@ import type {
   Results,
 } from "../../../shared/contracts";
 
+// Keep the UI's existing type import stable when replacing its day-0 stub.
+export type { AliasMap } from "../../../shared/contracts";
+
 /**
  * compareProfile: the deterministic comparison core of LabelLens (Module C).
  * Pure function: no network, no UI, no storage. Displayed label wording is
