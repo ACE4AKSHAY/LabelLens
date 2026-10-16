@@ -25,9 +25,9 @@ export type { AliasMap } from "../../../shared/contracts";
  *  R2  matching term in a may_contain / other phrase -> possible_conflict
  *  R3  ambiguous map entry, unreviewed alias, review_required row, or unverified
  *      suggested_group -> possible_conflict
- *  R4  diet: clear nonveg_mark -> conflict; unclear or uncertain mark -> possible_conflict;
- *      diet_terms conflict only when reviewed and the row is clear; a veg_mark is
- *      visual evidence only and never upgrades or clears a status
+ *  R4  diet: a clear nonveg_mark -> conflict unless marks disagree or another mark is
+ *      unclear; then the mark evidence is review-gated. Unclear marks -> possible_conflict;
+ *      diet_terms conflict only when reviewed and the row is clear; a veg_mark never clears.
  *  R5  custom_avoid exact phrase only (no alias map) -> conflict / possible_conflict
  *  R6  no hits and every completeness condition holds -> no_match_found
  *  R7  no hits and R6 not satisfied -> unknown, naming what is missing
@@ -75,7 +75,7 @@ interface Hit {
   rule_id: string;
   rank: number;
   order: number;
-  flavor: "clear" | "review" | "precautionary" | "unreviewed";
+  flavor: "clear" | "review" | "disagreement" | "precautionary" | "unreviewed";
 }
 
 /** Normalization for matching only: lowercase, non-alphanumerics become spaces, whole tokens. */
@@ -436,7 +436,7 @@ function evaluateDiet(
   confirm: ConfirmState,
 ): ProfileResult {
   const label = diet === "vegan" ? "Vegan diet" : "Vegetarian diet";
-  const key = `diet_${diet}`;
+  const key = "diet_" + diet;
   const terms = aliasMap.diet_terms.filter((term) => term.applies_to.includes(diet));
   const hits: Hit[] = [];
   sources.forEach((source, order) => {
@@ -464,23 +464,60 @@ function evaluateDiet(
       flavor,
     });
   });
+
+  // Multiple photographed mark readings can disagree, and a clear reading can
+  // coexist with another unresolved reading. In either case, do not let one
+  // non-vegetarian mark turn the dietary result into a confirmed conflict.
+  const hasVegMark = extraction.marks.some((mark) => mark.kind === "veg_mark");
+  const hasNonvegMark = extraction.marks.some((mark) => mark.kind === "nonveg_mark");
+  const hasUnclearMark = extraction.marks.some(
+    (mark) => mark.kind === "uncertain_diet_mark" || mark.review_required,
+  );
+  const markDisagreement = hasNonvegMark && (hasVegMark || hasUnclearMark);
+
   extraction.marks.forEach((mark, index) => {
     const order = sources.length + index;
     if (mark.kind === "veg_mark") {
-      if (mark.review_required) {
-        hits.push({ evidence: markEvidence(mark), conflict: false, rule_id: "R4", rank: 2, order, flavor: "review" });
+      if (mark.review_required || hasNonvegMark) {
+        hits.push({
+          evidence: markEvidence(mark),
+          conflict: false,
+          rule_id: "R4",
+          rank: 2,
+          order,
+          flavor: markDisagreement ? "disagreement" : "review",
+        });
       }
       return;
     }
     if (mark.kind === "nonveg_mark" && !mark.review_required) {
-      hits.push({ evidence: markEvidence(mark), conflict: true, rule_id: "R4", rank: 4, order, flavor: "clear" });
+      hits.push({
+        evidence: markEvidence(mark),
+        conflict: !markDisagreement,
+        rule_id: "R4",
+        rank: 4,
+        order,
+        flavor: markDisagreement ? "disagreement" : "clear",
+      });
       return;
     }
-    // nonveg_mark needing review, or uncertain_diet_mark: the pack's diet status is unclear.
-    hits.push({ evidence: markEvidence(mark), conflict: false, rule_id: "R4", rank: 2, order, flavor: "review" });
+    // A reviewed/uncertain mark is unresolved; with an opposing mark, retain
+    // that disagreement in the finding rather than allowing a clear mark to win.
+    hits.push({
+      evidence: markEvidence(mark),
+      conflict: false,
+      rule_id: "R4",
+      rank: 2,
+      order,
+      flavor: markDisagreement ? "disagreement" : "review",
+    });
   });
+
+  // A lone clear veg mark is visual context only. It must not create a match or
+  // downgrade a result on its own. When it opposes another mark it is already
+  // carried by the review-gated hit above, so do not duplicate its evidence.
   const clearVegMarks = extraction.marks
-    .filter((mark) => mark.kind === "veg_mark" && !mark.review_required)
+    .filter((mark) => mark.kind === "veg_mark" && !mark.review_required && !hasNonvegMark)
     .map(markEvidence);
   return finishItem(key, label, hits, (winner) => dietReason(winner, label), clearVegMarks, extraction, confirm);
 }
@@ -488,6 +525,9 @@ function evaluateDiet(
 function dietReason(winner: Hit, label: string): string {
   const isMark = winner.evidence.kind === "mark";
   const quoted = `"${winner.evidence.label_text ?? ""}"`;
+  if (winner.flavor === "disagreement") {
+    return "The extracted diet-mark readings disagree or include an unclear mark; review the pictured evidence before relying on this comparison.";
+  }
   if (winner.conflict) {
     if (isMark) return `The pack shows a non-vegetarian mark, which conflicts with ${label}.`;
     return `Label text matches your restriction: ${quoted}.`;
