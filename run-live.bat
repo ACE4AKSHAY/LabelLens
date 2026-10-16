@@ -13,14 +13,14 @@ if not exist "frontend\node_modules" (
   exit /b 1
 )
 if not exist "backend\.env" (
-  echo backend\.env is missing. Run install-once.bat, then add GEMINI_API_KEY to backend\.env.
+  echo backend\.env is missing. Run install-once.bat, then configure a vision provider key in backend\.env.
   pause
   exit /b 1
 )
 
-echo Live mode sends uploaded label photos to the configured Gemini provider.
-echo Review Google's current terms and LabelLens provider-policy status before using real photos.
-echo Check that backend\.env contains your GEMINI_API_KEY. Never commit or share that file.
+echo Live mode sends uploaded label photos to the configured vision provider.
+echo Review that provider's current terms and LabelLens provider-policy status before using real photos.
+echo Check backend\.env has the key for VISION_PROVIDER. Never commit or share that file.
 echo.
 
 set "EXTRACT_MODE=live"

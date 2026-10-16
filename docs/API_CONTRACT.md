@@ -48,16 +48,19 @@ Errors use the design's JSON envelope:
 ## Modes and privacy
 
 - `EXTRACT_MODE=mock` is the default and makes no provider calls. It returns the explicitly fictional `shared/fixtures/extraction/clear_peanut_alias.json`; the warning in the response says that it was not derived from the uploaded photo.
-- `EXTRACT_MODE=live` sends only the uploaded images and a fixed extraction instruction to Gemini from the backend. No profile field is accepted, logged, or sent.
-- Store `GEMINI_API_KEY` only in `backend/.env` or the backend process environment. `backend/.env.example` contains placeholders only. Never expose the key to frontend code or commit `.env`.
-- The configured default is the stable `gemini-3.8-flash` model as of 16 October 2026; `GEMINI_MODEL` can override it without code changes.
-- Before any live call, the UI must disclose that images are sent to Google and link to the current Gemini API terms. Unpaid Gemini API usage may be used to improve Google products and may be reviewed by people; do not send sensitive, confidential, or personal information through unpaid service. Paid service has different data-use terms but retains limited prompt/response logs for safety. Do not claim that Google deletes submitted images.
+- `EXTRACT_MODE=live` sends only the uploaded images and a fixed extraction instruction to the selected provider from the backend. No profile field is accepted, logged, or sent. Select `VISION_PROVIDER=gemini|glm`.
+- Store provider keys only in `backend/.env` or the backend process environment. `backend/.env.example` contains placeholders only. Never expose a key to frontend code or commit `.env`.
+- Gemini defaults to `gemini-3.5-flash-lite`; GLM defaults to `glm-5.3-flash`. `GEMINI_MODEL` and `GLM_MODEL` can override them without code changes. Gemini structured JSON output is validated against the contract; GLM receives the schema in its instructions and its JSON is validated locally. A synthetic image request succeeded through the frontend proxy in 7.6 seconds with the default Gemini model. Real-label accuracy and typical latency have not been measured.
+- Before any live call, the UI must disclose that images are sent to the configured external vision provider and link to the applicable provider terms. Check current terms, account limits, and data-handling terms before use; do not send sensitive or personal information. Do not claim provider-side deletion.
 - The current terms describe Gemini API use as for professional/business purposes rather than consumer use, prohibit API clients directed toward or likely accessed by under-18 users, and require paid service for users in the EEA, UK, or Switzerland. LabelLens is a shopper-facing app, so public live-mode suitability is unresolved. Keep mock mode for demos and do not deploy live mode to shoppers until the use is confirmed permitted.
 - Gemini API rate limits are per Google project and vary by model/tier. Check active limits in Google AI Studio; a successful probe verifies access at that time, not a guaranteed quota. The API returns a retryable `quota` error when the provider reports exhaustion.
 
-## Provider references checked on 16 October 2026
+## Provider references checked on 17 October 2026
 
 - [Gemini 3.8 Flash model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash) — stable model, image input, and structured outputs supported.
+- [Gemini 3.5 Flash-Lite model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite) — stable model with image input and structured output.
+- [GLM-5.3-Flash overview](https://z.ai/blog/glm-5.3-flash) and [Z.AI vision API guide](https://docs.z.ai/guides/vlm/glm-5.3-flash) — GLM-5.3-Flash is described as natively multimodal; vision requests use the chat-completions API. The API reference documents `response_format` for text models only, so LabelLens validates GLM's schema-guided JSON itself.
+- [Z.AI API terms](https://docs.z.ai/legal-agreement/terms-of-use) — review current API terms and any Additional Terms before use.
 - [Gemini image understanding](https://ai.google.dev/gemini-api/docs/image-understanding) — inline image parts and multiple images are supported; inline request data is limited to 20 MB, so the backend defaults to a conservative 14 MiB total raw-image cap after base64 encoding overhead.
 - [Structured outputs](https://ai.google.dev/gemini-api/docs/structured-output) — JSON Schema and Pydantic-backed structured output are supported.
 - [Gemini API rate limits](https://ai.google.dev/gemini-api/docs/rate-limits) — limits vary by project, model, and tier; inspect active limits in AI Studio.

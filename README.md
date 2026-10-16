@@ -35,7 +35,7 @@ From the repository root, double-click `install-once.bat` once per clone. It ins
 
 Then double-click `run-mock.bat`. It opens the backend and frontend in separate command windows; visit <http://localhost:5173>. No API key or live provider call is needed for the mock demo.
 
-For live mode, edit `backend/.env` and replace the placeholder `GEMINI_API_KEY` with your key, then double-click `run-live.bat`. Live mode sends uploaded label photos to Gemini. Review the current provider terms and LabelLens policy status before using real photos; mock mode remains the default for demos.
+For live mode, edit `backend/.env`, set `EXTRACT_MODE=live` and choose `VISION_PROVIDER=gemini` or `VISION_PROVIDER=glm`. Add the matching backend key (`GEMINI_API_KEY` or `GLM_API_KEY`), then double-click `run-live.bat`. GLM defaults to `glm-5.3-flash`. Live mode sends uploaded label photos to the selected provider; review its current terms before using real photos. Mock mode remains the default for demos.
 
 ### Manual setup
 
@@ -57,7 +57,7 @@ npm run install:frontend
 npm run dev
 ```
 
-The UI defaults to mock mode. It computes results with the browser-side deterministic rules. For real extraction, set `VITE_EXTRACT_MODE=live` in `frontend/.env`, keep `EXTRACT_MODE=live` and `GEMINI_API_KEY` in `backend/.env`, and review the provider terms and access limits first.
+The UI defaults to mock mode. It computes results with the browser-side deterministic rules. For real extraction, set `VITE_EXTRACT_MODE=live` in `frontend/.env`, keep `EXTRACT_MODE=live` in `backend/.env`, choose a `VISION_PROVIDER`, set that provider's key, and review its terms and access limits first.
 
 From the repository root, run the UI, rules, and fixture checks:
 

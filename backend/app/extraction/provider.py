@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import base64
 import json
+import logging
 from dataclasses import dataclass
-from typing import Protocol, Sequence
+from typing import Any, Protocol, Sequence
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -31,6 +35,24 @@ Describe a vegetarian/non-vegetarian symbol only in marks.visual_description; ne
 Set analysis_id to an empty string; the backend will assign it. Include every required field, including empty arrays and nullable values. Do not include any dietary profile or user preference."""
 
 RETRY_INSTRUCTION = "The prior response did not validate. Return one complete JSON object matching the provided schema. Preserve exact source text; do not add prose or markdown."
+
+
+def _gemini_response_schema() -> dict[str, Any]:
+    """Convert Pydantic's JSON Schema to Gemini's supported subset."""
+    schema = Extraction.model_json_schema()
+
+    def normalize(value: Any) -> Any:
+        if isinstance(value, dict):
+            if "const" in value:
+                value["enum"] = [value.pop("const")]
+            value.pop("default", None)
+            for key, child in tuple(value.items()):
+                value[key] = normalize(child)
+        elif isinstance(value, list):
+            return [normalize(item) for item in value]
+        return value
+
+    return normalize(schema)
 
 
 class MockExtractor:
@@ -81,7 +103,10 @@ class GeminiExtractor:
         ]
 
         try:
-            with genai.Client(api_key=self.settings.gemini_api_key) as client:
+            with genai.Client(
+                api_key=self.settings.gemini_api_key,
+                http_options=types.HttpOptions(timeout=90_000),
+            ) as client:
                 for attempt in range(2):
                     contents = base_contents if attempt == 0 else [*base_contents, RETRY_INSTRUCTION]
                     try:
@@ -89,8 +114,9 @@ class GeminiExtractor:
                             model=self.settings.gemini_model,
                             contents=contents,
                             config=types.GenerateContentConfig(
+                                system_instruction=SYSTEM_INSTRUCTION,
                                 response_mime_type="application/json",
-                                response_schema=Extraction,
+                                response_json_schema=_gemini_response_schema(),
                                 temperature=0,
                                 max_output_tokens=16_000,
                             ),
@@ -132,6 +158,12 @@ class GeminiExtractor:
         except (TypeError, ValueError):
             status_number = None
 
+        logging.getLogger(__name__).warning(
+            "Gemini request failed: exception=%s status=%s",
+            type(exc).__name__,
+            status_number,
+        )
+
         if status_number == 429 or "resource_exhausted" in message or "quota" in message:
             return ExtractionProviderError(
                 "Gemini quota is temporarily exhausted. Please try again later.",
@@ -158,3 +190,153 @@ class GeminiExtractor:
             "The vision provider could not complete the request. Please try again.",
             retryable=True,
         )
+
+
+class GLMExtractor:
+    """Z.AI GLM-5.3-Flash adapter; validate schema-guided JSON against our contract locally."""
+
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+
+    def extract(self, images: Sequence[ImageInput]) -> Extraction:
+        if not self.settings.glm_api_key:
+            raise ExtractionProviderError(
+                "Live extraction is not configured. Set GLM_API_KEY in backend/.env.",
+                retryable=False,
+            )
+        if not images:
+            raise ValueError("At least one image is required.")
+
+        schema_text = json.dumps(Extraction.model_json_schema(), ensure_ascii=False)
+        system_prompt = (
+            SYSTEM_INSTRUCTION
+            + "\nReturn exactly one JSON object, with no markdown or extra prose, matching this JSON Schema: "
+            + schema_text
+        )
+        message_content: list[dict[str, Any]] = [
+            {"type": "text", "text": "Read these package label image(s). Keep image indexes in upload order, starting at zero."}
+        ]
+        for image in images:
+            data_uri = f"data:{image.mime_type};base64,{base64.b64encode(image.data).decode('ascii')}"
+            message_content.append({"type": "image_url", "image_url": {"url": data_uri}})
+
+        for attempt in range(2):
+            if attempt:
+                message_content[0]["text"] += (
+                    " Your previous response did not validate. Return a complete JSON object only; "
+                    "preserve exact label text and do not fill unreadable or missing information."
+                )
+            payload = {
+                "model": self.settings.glm_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": message_content},
+                ],
+                "temperature": 0.1,
+                "reasoning_effort": "low",
+                "max_tokens": 16000,
+                "stream": False,
+            }
+            try:
+                response_data = self._request(payload)
+            except _GLMHTTPError as exc:
+                raise self._provider_error(exc) from None
+            except (URLError, TimeoutError, OSError):
+                raise ExtractionProviderError(
+                    "GLM could not be reached. Check the network and try again.", retryable=True
+                ) from None
+            except json.JSONDecodeError:
+                if attempt:
+                    raise UnreadableResponseError() from None
+                continue
+
+            try:
+                content = response_data["choices"][0]["message"]["content"]
+                if not isinstance(content, str) or not content.strip():
+                    raise ValueError("empty response")
+                raw_text = content.strip()
+                if raw_text.startswith("```json") and raw_text.endswith("```"):
+                    raw_text = raw_text[7:-3].strip()
+                elif raw_text.startswith("```") and raw_text.endswith("```"):
+                    raw_text = raw_text[3:-3].strip()
+                extraction = Extraction.model_validate_json(raw_text)
+                data = extraction.model_dump()
+                data["analysis_id"] = uuid4().hex
+                extraction = Extraction.model_validate(data)
+                return validate_evidence(extraction, len(images), require_each_image=True)
+            except (KeyError, IndexError, TypeError, ValidationError, ValueError):
+                if attempt:
+                    raise UnreadableResponseError() from None
+
+        raise UnreadableResponseError()
+
+    def _request(self, payload: dict[str, Any]) -> dict[str, Any]:
+        request = Request(
+            self.settings.glm_api_url,
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self.settings.glm_api_key}",
+                "Content-Type": "application/json",
+                "Accept-Language": "en-US,en",
+            },
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=180) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            try:
+                error_body = json.loads(exc.read().decode("utf-8"))
+                error_detail = error_body.get("error", error_body)
+                code = error_detail.get("code")
+                message = str(error_detail.get("message", ""))
+            except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+                code, message = None, ""
+            raise _GLMHTTPError(exc.code, code, message) from None
+        if not isinstance(body, dict):
+            raise UnreadableResponseError()
+        return body
+
+    @staticmethod
+    def _provider_error(exc: _GLMHTTPError) -> ExtractionProviderError:
+        message = exc.message.lower()
+        account_errors = {
+            "1113": "GLM API balance is empty or no API resource package is available. Add API credit in the Z.AI console before retrying.",
+            "1309": "The GLM subscription has expired. Check the Z.AI account and general API access before retrying.",
+            "1311": "This GLM account does not have access to the configured model. Check GLM_MODEL and model access in Z.AI.",
+            "1314": "The GLM enterprise package has expired. Contact the account administrator.",
+            "1315": "This GLM key is restricted to coding tools. Configure a general API key with vision access for LabelLens.",
+        }
+        if str(exc.code) in account_errors:
+            return ExtractionProviderError(account_errors[str(exc.code)], retryable=False)
+        if exc.status == 429 or str(exc.code) in {"1302", "1303"} or "quota" in message:
+            return ExtractionProviderError(
+                "GLM quota or rate limit is temporarily exhausted. Please try again later.",
+                retryable=True,
+                quota=True,
+            )
+        if exc.status in {401, 403}:
+            return ExtractionProviderError(
+                "GLM rejected the backend credential or project access. Check GLM_API_KEY in backend/.env.",
+                retryable=False,
+            )
+        if exc.status == 400:
+            return ExtractionProviderError(
+                "GLM rejected the request. Check GLM_MODEL and the provider account's vision access.",
+                retryable=False,
+            )
+        if exc.status == 404:
+            return ExtractionProviderError(
+                "The configured GLM model or API endpoint is unavailable. Check GLM_MODEL and GLM_API_URL.",
+                retryable=False,
+            )
+        return ExtractionProviderError(
+            "GLM could not complete the extraction request. Please try again.", retryable=True
+        )
+
+
+class _GLMHTTPError(Exception):
+    def __init__(self, status: int, code: object, message: str) -> None:
+        self.status = status
+        self.code = code
+        self.message = message
