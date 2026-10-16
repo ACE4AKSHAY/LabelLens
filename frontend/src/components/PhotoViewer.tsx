@@ -83,7 +83,7 @@ export function PhotoViewer({
                 "No note provided"}
             </p>
             <p className="small muted">
-              This is an automated estimate, not a calibrated quality or OCR
+              This is an estimate, not a calibrated quality or OCR
               accuracy measurement.
             </p>
           </div>

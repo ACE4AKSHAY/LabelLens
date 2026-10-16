@@ -124,6 +124,16 @@ export function ScanPage({
                 results={scan.results!}
                 packHasNoAllergenStatement={scan.confirm.pack_has_no_allergen_statement}
               />
+              {scan.extraction?.analysis_id === "local-demo-itc-tedhe-medhe" && (
+                <div className="note" role="note">
+                  <p className="small">
+                    <strong>Preloaded demo reading.</strong> These sample
+                    results are hardcoded for this photo and were not generated
+                    by OCR or a live AI request. Small curved print remains
+                    uncertain; check the package directly.
+                  </p>
+                </div>
+              )}
               <div className="scan-export-actions" role="group" aria-label="Export scan results">
                 <button
                   type="button"

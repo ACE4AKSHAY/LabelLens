@@ -41,8 +41,8 @@ export function DevFixturePicker({
         </button>
       </div>
       <p className="small muted">
-        Loads a fictional extraction into the flow. Results are recomputed
-        against your browser profile by the rules engine.
+        Loads a preloaded sample extraction; it does not call OCR. Results are
+        recomputed against your browser profile by the rules engine.
       </p>
       <ul className="dev-list">
         {packs.map((pack) => (
@@ -56,6 +56,9 @@ export function DevFixturePicker({
               <span className="small muted">{pack.description}</span>
               {pack.source === "shared" && (
                 <span className="chip chip-mapping">shared fixture</span>
+              )}
+              {pack.demoPhotoPath && (
+                <span className="chip chip-mapping">local photo, omitted from Git</span>
               )}
             </button>
           </li>

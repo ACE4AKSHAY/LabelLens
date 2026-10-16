@@ -8,6 +8,7 @@ import { sampleMasalaBiscuits } from "./sampleMasalaBiscuits";
 import { sampleCheeseCrackers } from "./sampleCheeseCrackers";
 import { sampleRicePuffs } from "./sampleRicePuffs";
 import { sampleChocoBar } from "./sampleChocoBar";
+import { sampleItcTedheMedhe } from "./sampleItcTedheMedhe";
 
 export { ERROR_SIM_ID };
 export type { FixturePack } from "./types";
@@ -19,6 +20,7 @@ const builtInPacks: FixturePack[] = [
   sampleCheeseCrackers,
   sampleRicePuffs,
   sampleChocoBar,
+  sampleItcTedheMedhe,
 ];
 
 const sharedFixtureModules = import.meta.glob(
