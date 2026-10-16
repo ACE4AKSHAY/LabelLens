@@ -412,5 +412,33 @@ checkTransition("REVIEW milk stays possible_conflict until checked", uncheckedMi
 checkTransition("REVIEW checked milk row may become conflict", checkedMilkStatus === "conflict");
 checkTransition("REVIEW unrelated peanut stays unknown until checked", uncheckedPeanutStatus === "unknown");
 checkTransition("REVIEW no-match waits for explicit check", checkedPeanutStatus === "no_match_found");
+
+// Mission 3: explicit disagreements must stay review-gated and retain source evidence.
+const disagreementFixture = JSON.parse(readFileSync(join(FIXTURES_DIR, "g4_milk_solids_row_needs_review.json"), "utf8"));
+const disagreementRow = disagreementFixture.ingredients.find((row) => row.id === "ing-3");
+Object.assign(disagreementRow, { label_text: "Wheat", evidence_quote: "Wheat", review_required: false, review_reason: null,
+  suggested_group: { group: "soy", note: "synthetic contradiction regression" } });
+disagreementFixture.ingredients = [disagreementRow];
+disagreementFixture.allergen_statements = { contains: [], may_contain: [], other: [] };
+const m3Profile = { schema_version: "1", allergens: ["soy", "wheat_gluten"], custom_avoid: [], diet: "none" };
+const m3Results = compareProfile(disagreementFixture, m3Profile, completeConfirm, aliasMapBase).items;
+checkTransition("MISSION 3 printed Wheat vs model soy disagreement stays possible and asks for review",
+  m3Results.every((item) => item.status === "possible_conflict" && item.rule_id === "R9" && item.reason.includes("Check this phrase against the photo")) &&
+  m3Results.every((item) => item.evidence.some((evidence) => evidence.evidence_quote === "Wheat" && evidence.image_index === 0)));
+
+const bucketFixture = JSON.parse(readFileSync(join(FIXTURES_DIR, "g3_may_contain_tree_nut.json"), "utf8"));
+bucketFixture.allergen_statements.contains = bucketFixture.allergen_statements.may_contain;
+bucketFixture.allergen_statements.may_contain = [];
+const bucketResult = singleResult(bucketFixture, { schema_version: "1", allergens: ["tree_nut"], custom_avoid: [], diet: "none" });
+checkTransition("MISSION 3 may-contain wording mislabeled as contains is unresolved with quote evidence",
+  bucketResult.status === "possible_conflict" && bucketResult.rule_id === "R9" &&
+  bucketResult.reason.includes("direct contains statement") && bucketResult.evidence[0]?.evidence_quote.includes("May contain"));
+
+const markFixture = JSON.parse(readFileSync(join(FIXTURES_DIR, "g10_nonveg_mark_clear.json"), "utf8"));
+markFixture.marks.push({ kind: "veg_mark", visual_description: "green vegetarian dot", image_index: 0, review_required: false, review_reason: null });
+const markResult = singleResult(markFixture, { schema_version: "1", allergens: [], custom_avoid: [], diet: "vegetarian" });
+checkTransition("MISSION 3 contradictory dietary marks are unresolved and link both marks",
+  markResult.status === "possible_conflict" && markResult.rule_id === "R9" &&
+  markResult.reason.includes("both vegetarian and non-vegetarian") && markResult.evidence.length >= 2);
 console.log(`\n${passCount}/${expected.cases.length} golden cases passed`);
 if (failed) process.exit(1);
