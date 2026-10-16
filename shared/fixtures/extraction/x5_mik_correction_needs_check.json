@@ -1,0 +1,43 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-x5-mik-correction-needs-check",
+  "images": [
+    { "index": 0, "role": "ingredients", "quality": "good", "note": null }
+  ],
+  "product": { "name": "Sample Crackers", "brand": null, "quantity": "80 g" },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Flour, Mik, Salt",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Nil.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": { "status": "not_uploaded", "text": null, "image_index": null, "reason": "Nutrition panel not uploaded." },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Crackers; Net quantity 80 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    { "id": "ing-1", "label_text": "Flour", "evidence_quote": "Flour", "image_index": 0, "review_required": false, "review_reason": null },
+    { "id": "ing-2", "label_text": "Mik", "evidence_quote": "Mik", "image_index": 0, "review_required": true, "review_reason": "OCR spelling may be inaccurate; check it against the photo." },
+    { "id": "ing-3", "label_text": "Salt", "evidence_quote": "Salt", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "allergen_statements": { "contains": [], "may_contain": [], "other": [] },
+  "marks": [
+    { "kind": "veg_mark", "visual_description": "green dot inside a green square", "image_index": 0, "review_required": false, "review_reason": null }
+  ],
+  "nutrition": [],
+  "warnings": [
+    "Mock OCR correction case: the visible source wording is recorded as Mik until the user checks the photo."
+  ]
+}

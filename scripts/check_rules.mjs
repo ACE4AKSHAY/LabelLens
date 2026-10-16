@@ -284,5 +284,133 @@ for (const testCase of expected.cases) {
   }
 }
 
+// The UI correction contract is deliberately small: retain the provider quote,
+// store the user wording, and clear review_required only after a photo check.
+// These integration checks run that transition before comparing again.
+function applyCorrections(extraction, corrections) {
+  const corrected = structuredClone(extraction);
+  for (const correction of corrections) {
+    const row = corrected.ingredients.find((candidate) => candidate.id === correction.id);
+    if (!row) throw new Error(`Correction row ${correction.id} was not found`);
+    row.label_text = correction.label_text;
+    row.edited_by_user = true;
+    if (correction.checked_against_photo) {
+      row.review_required = false;
+      row.review_reason = null;
+    }
+  }
+  return corrected;
+}
+
+function checkTransition(label, condition) {
+  if (condition) console.log(`${label}  PASS`);
+  else {
+    failed = true;
+    console.log(`${label}  FAIL`);
+  }
+}
+
+const completeConfirm = {
+  ingredients_complete: true,
+  allergen_statement_complete: true,
+  pack_has_no_allergen_statement: false,
+};
+function singleResult(extraction, profile) {
+  return compareProfile(extraction, profile, completeConfirm, aliasMapBase).items[0];
+}
+
+// Correct an uncertain OCR row, explicitly check it against the photo, then
+// compare again. The corrected wording drives matching while original evidence
+// remains intact for review.
+const correctedGroundnutFixture = JSON.parse(
+  readFileSync(join(FIXTURES_DIR, "g13_edited_groundnut_row.json"), "utf8"),
+);
+const uncertainGroundnutFixture = structuredClone(correctedGroundnutFixture);
+const uncertainGroundnutRow = uncertainGroundnutFixture.ingredients.find((row) => row.id === "ing-2");
+uncertainGroundnutRow.label_text = "Groundnut 0il";
+uncertainGroundnutRow.edited_by_user = false;
+uncertainGroundnutRow.review_required = true;
+uncertainGroundnutRow.review_reason = "OCR read a zero in the word oil; check against the photo.";
+const peanutProfile = { schema_version: "1", allergens: ["peanut"], custom_avoid: [], diet: "none" };
+const beforeCorrection = singleResult(uncertainGroundnutFixture, peanutProfile);
+const afterCorrectionFixture = applyCorrections(uncertainGroundnutFixture, [{
+  id: "ing-2",
+  label_text: "Groundnut Oil",
+  checked_against_photo: true,
+}]);
+const afterCorrection = singleResult(afterCorrectionFixture, peanutProfile);
+checkTransition("CORRECTION uncertain OCR row is conservatively possible_conflict", beforeCorrection.status === "possible_conflict");
+checkTransition("CORRECTION checked wording remains possible_conflict", afterCorrection.status === "possible_conflict");
+checkTransition(
+  "CORRECTION comparison recalculates wording and retains quote",
+  beforeCorrection.evidence.some((item) => item.label_text === "Groundnut 0il") &&
+    afterCorrection.evidence.some((item) => item.label_text === "Groundnut Oil" && item.evidence_quote === "Groundnut 0il"),
+);
+
+// Unlike groundnut, the OCR spelling "Mik" has no milk match. Once the user
+// supplies the correct wording, the exact-term path is still review-gated
+// until the row is explicitly checked against the photo.
+const mikFixture = JSON.parse(readFileSync(join(FIXTURES_DIR, "x5_mik_correction_needs_check.json"), "utf8"));
+const milkProfile = { schema_version: "1", allergens: ["milk"], custom_avoid: [], diet: "none" };
+const beforeMikCorrection = singleResult(mikFixture, milkProfile);
+const correctedMikWithoutPhotoCheck = applyCorrections(mikFixture, [{
+  id: "ing-2",
+  label_text: "Milk",
+  checked_against_photo: false,
+}]);
+const correctedMikWithoutPhotoCheckResult = singleResult(correctedMikWithoutPhotoCheck, milkProfile);
+const correctedMikWithPhotoCheck = applyCorrections(mikFixture, [{
+  id: "ing-2",
+  label_text: "Milk",
+  checked_against_photo: true,
+}]);
+const correctedMikWithPhotoCheckResult = singleResult(correctedMikWithPhotoCheck, milkProfile);
+checkTransition("CORRECTION Mik starts unknown", beforeMikCorrection.status === "unknown");
+checkTransition(
+  "CORRECTION text edit alone keeps review_required and blocks conflict",
+  correctedMikWithoutPhotoCheck.ingredients.find((row) => row.id === "ing-2").review_required &&
+    correctedMikWithoutPhotoCheckResult.status === "possible_conflict",
+);
+checkTransition("CORRECTION checked Milk row becomes conflict", correctedMikWithPhotoCheckResult.status === "conflict");
+checkTransition(
+  "CORRECTION checked Milk evidence keeps the original quote",
+  correctedMikWithPhotoCheckResult.evidence.some((item) => item.label_text === "Milk" && item.evidence_quote === "Mik"),
+);
+
+// A correction cannot turn a partial label into a complete one, so it cannot
+// open the R6 no-match path.
+const partialFixture = JSON.parse(readFileSync(join(FIXTURES_DIR, "g5_ingredients_partial_no_hits.json"), "utf8"));
+const partialCorrectedFixture = applyCorrections(partialFixture, [{
+  id: "ing-3",
+  label_text: "Sunflower Oil",
+  checked_against_photo: true,
+}]);
+const partialCorrection = singleResult(partialCorrectedFixture, peanutProfile);
+checkTransition(
+  "CORRECTION partial section status is unchanged",
+  partialCorrectedFixture.sections.ingredients.status === "readable_partial",
+);
+checkTransition(
+  "CORRECTION partial ingredients remain unknown",
+  partialCorrection.status === "unknown" && partialCorrection.status !== "no_match_found",
+);
+
+// A matching row stays review-gated until the user explicitly checks it.
+const reviewFixture = JSON.parse(readFileSync(join(FIXTURES_DIR, "g4_milk_solids_row_needs_review.json"), "utf8"));
+const reviewProfile = { schema_version: "1", allergens: ["milk"], custom_avoid: [], diet: "none" };
+const peanutOnlyProfile = { ...reviewProfile, allergens: ["peanut"] };
+const uncheckedMilkStatus = singleResult(reviewFixture, reviewProfile).status;
+const uncheckedPeanutStatus = singleResult(reviewFixture, peanutOnlyProfile).status;
+const checkedFixture = applyCorrections(reviewFixture, [{
+  id: "ing-3",
+  label_text: "Milk Solids",
+  checked_against_photo: true,
+}]);
+const checkedMilkStatus = singleResult(checkedFixture, reviewProfile).status;
+const checkedPeanutStatus = singleResult(checkedFixture, peanutOnlyProfile).status;
+checkTransition("REVIEW milk stays possible_conflict until checked", uncheckedMilkStatus === "possible_conflict");
+checkTransition("REVIEW checked milk row may become conflict", checkedMilkStatus === "conflict");
+checkTransition("REVIEW unrelated peanut stays unknown until checked", uncheckedPeanutStatus === "unknown");
+checkTransition("REVIEW no-match waits for explicit check", checkedPeanutStatus === "no_match_found");
 console.log(`\n${passCount}/${expected.cases.length} golden cases passed`);
 if (failed) process.exit(1);

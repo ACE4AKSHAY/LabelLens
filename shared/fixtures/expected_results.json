@@ -317,6 +317,35 @@
       "expect_reason_includes": {
         "peanut": "could not be read"
       }
+    },
+    {
+      "id": "X4",
+      "fixture": "x4_curved_obscured_partial.json",
+      "description": "Mock curved, partly obscured ingredient panel reports unusable image quality and partial readability; visible text only, all outcomes unknown.",
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": false, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "peanut": { "status": "unknown", "rule": "R7" },
+        "milk": { "status": "unknown", "rule": "R7" },
+        "tree_nut": { "status": "unknown", "rule": "R7" },
+        "diet_vegetarian": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": { "peanut": "only partly readable" }
+    },
+    {
+      "id": "X5",
+      "fixture": "x5_mik_correction_needs_check.json",
+      "description": "A review-required OCR row reading Mik has no milk match yet, so complete coverage still stays unknown until the user checks the row.",
+      "profile": {
+        "schema_version": "1",
+        "allergens": ["milk"],
+        "custom_avoid": [],
+        "diet": "none"
+      },
+      "confirm": { "ingredients_complete": true, "allergen_statement_complete": true, "pack_has_no_allergen_statement": false },
+      "expected": {
+        "milk": { "status": "unknown", "rule": "R7" }
+      },
+      "expect_reason_includes": { "milk": "needs review" }
     }
   ]
 }
