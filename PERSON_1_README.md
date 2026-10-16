@@ -43,12 +43,13 @@ readable label text. This is not a safety check."*, evidence quotes are shown
 - **Results view**: coverage summary (counts + per-section line, no overall
   verdict), ordered result cards, evidence quotes with source badges and
   "Show on photo" focus/highlight, original photos beside results
-  (sticky on desktop, collapsible on phone).
-- **Ingredient review table**: As printed · Recognized as · Edit. Editing sets
-  `edited_by_user` (restorable to the original), "I checked this row against
-  the photo" clears `review_required`; every change re-runs `compareProfile`.
-  Recognized-as appears only from the alias map; model suggestions are labeled
-  "unverified suggestion".
+  (sticky on desktop, collapsible on phone); each uploaded photo also shows its
+  model-reported quality and note, labeled as an estimate.
+- **Ingredient and allergen review tables**: original extracted wording stays
+  visible; corrected wording is shown separately. Editing either row type
+  immediately recomputes results and keeps `review_required` until the user
+  explicitly checks that row against the photo. The Recognized-as column follows
+  the alias map; model suggestions are labeled "unverified suggestion".
 - **Confirm completeness**: "Is this the whole ingredient list?" and the
   allergen-line question (fully visible / pack has none / not sure),
   mutually exclusive states enforced.
@@ -77,15 +78,18 @@ readable label text. This is not a safety check."*, evidence quotes are shown
 
 ### Quality / verification
 - `tsc --noEmit` clean; `vite build` passes.
-- `npm run test:a` — **88 functional checks** (no new dependencies): profile
+- `npm run test:a` — **106 functional checks** (no new dependencies): profile
   validation/summary, the correction pipeline (edit / restore / check-row),
-  and contract honesty of every fixture pack (evidence quotes present,
+  ingredient and allergen correction behavior, and contract honesty of every fixture pack (evidence quotes present,
   image indices in bounds, nutrition values text-or-null, severity ordering,
   no-match wording, unknown-never-no-match on unreadable panels, flagged rows
   never plain conflicts).
 - Manually driven in a real browser at ~360 / ~768 / ~1280 px (zero horizontal
   overflow at 360 px) through the full interaction set: profile → photos →
   fixture scan → edit / restore / check-row / confirm → couldn't-read → nutrition.
+- Mission 02 regression checks and production build pass. The added quality
+  summary and allergen table were not manually browser-reviewed; no real-photo
+  OCR or physical-camera accuracy check was performed.
 - Accessibility: skip link, fieldset/legend groups, labeled inputs,
   `aria-current` steps, `aria-live` reading state, visible focus rings,
   ≥44 px touch targets, reduced-motion support, 16 px base text.
@@ -139,7 +143,7 @@ readable label text. This is not a safety check."*, evidence quotes are shown
 cd frontend
 npm install
 npm run dev        # http://localhost:5173 — mock mode by default
-npm run test:a     # 88 functional checks
+npm run test:a     # 106 functional checks
 npm run build      # tsc + vite build
 ```
 - Add `?dev=1` for the fixture picker (every state without a backend).

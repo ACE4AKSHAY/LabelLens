@@ -9,12 +9,12 @@ import { ZoomIcon } from "./icons";
 
 export function EvidenceQuote({
   evidence,
-  edited,
+  correctedText,
   onFocusPhoto,
 }: {
   evidence: EvidenceItem;
-  /** True when the matching ingredient row was edited by the user. */
-  edited?: boolean;
+  /** Browser-local corrected wording; source evidence remains unchanged. */
+  correctedText?: string;
   onFocusPhoto?: (imageIndex: number | null) => void;
 }) {
   const hasImage = evidence.image_index !== null && onFocusPhoto !== undefined;
@@ -24,8 +24,15 @@ export function EvidenceQuote({
         <span className="evidence-label">As printed</span>
         <p>“{evidence.evidence_quote}”</p>
       </blockquote>
+      {correctedText !== undefined && (
+        <div className="evidence-correction">
+          <span className="evidence-label">Corrected wording</span>
+          <p>{correctedText}</p>
+        </div>
+      )}
       <figcaption className="row">
-        <SourceBadge kind={edited ? "edited" : "photo"} />
+        <SourceBadge kind="photo" />
+        {correctedText !== undefined && <SourceBadge kind="edited" />}
         {evidence.mapped_to && (
           <span className="chip">
             {evidence.match_type === "alias"

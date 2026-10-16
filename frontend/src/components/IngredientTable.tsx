@@ -23,10 +23,10 @@ function buildAliasLookup(aliasMap: AliasMap): AliasLookup {
   };
 }
 
-function normalizedFor(row: IngredientRow): string | null {
+function normalizedFor(row: IngredientRow, displayedText: string): string | null {
   // In the real pipeline Person 3's normalizer decides "recognized as".
   // Until then the UI shows only what the (empty) alias map supports.
-  const lower = row.label_text.trim().toLowerCase();
+  const lower = displayedText.trim().toLowerCase();
   return lower.length > 0 ? lower : null;
 }
 
@@ -57,10 +57,10 @@ export function IngredientTable({
   if (rows.length === 0) {
     const status = extraction.sections.ingredients.status;
     return (
-      <p className="muted">
+      <p className="muted" role="note">
         {status === "not_uploaded"
-          ? "No ingredient panel was uploaded."
-          : "No ingredient rows could be read."}
+          ? "No ingredient panel was uploaded. Add a clear photo of the full ingredient list."
+          : "No ingredient rows were extracted. Missing OCR text does not establish that the list is empty. Add a clearer photo if the full list was not captured."}
       </p>
     );
   }
@@ -72,10 +72,12 @@ export function IngredientTable({
 
   const commitEdit = (row: IngredientRow) => {
     const text = draft.trim();
-    if (text.length === 0 || text === row.label_text) {
-      if (corrections[row.id] !== undefined && text === row.label_text) {
-        onRestore(row.id);
-      }
+    if (text.length === 0) {
+      setEditingId(null);
+      return;
+    }
+    if (text === row.label_text) {
+      if (corrections[row.id] !== undefined) onRestore(row.id);
     } else {
       onCorrect(row.id, text);
     }
@@ -95,10 +97,13 @@ export function IngredientTable({
         <tbody>
           {rows.map((row) => {
             const needsReview = row.review_required && !rowChecked[row.id];
+            const correctedText = corrections[row.id];
             const edited =
-              row.edited_by_user === true || corrections[row.id] !== undefined;
-            const shown = corrections[row.id] ?? row.label_text;
-            const aliasEntry = lookup.byTerm.get(normalizedFor(row) ?? "");
+              row.edited_by_user === true ||
+              (correctedText !== undefined && correctedText !== row.label_text);
+            const aliasEntry = lookup.byTerm.get(
+              normalizedFor(row, correctedText ?? row.label_text) ?? "",
+            );
             const suggestion = row.suggested_group ?? null;
 
             return (
@@ -110,7 +115,7 @@ export function IngredientTable({
                   {editingId === row.id ? (
                     <div className="edit-cell">
                       <label className="visually-hidden" htmlFor={`edit-${row.id}`}>
-                        Correct the printed text for {shown}
+                        Correct the printed text for {row.label_text}
                       </label>
                       <input
                         id={`edit-${row.id}`}
@@ -142,10 +147,17 @@ export function IngredientTable({
                     </div>
                   ) : (
                     <>
-                      <span className="printed-text">{shown}</span>
+                      <span className="printed-text">{row.label_text}</span>
                       {edited && (
-                        <span className="row" style={{ marginTop: 4 }}>
+                        <div className="correction-detail">
                           <SourceBadge kind="edited" />
+                          {correctedText !== undefined &&
+                            correctedText !== row.label_text && (
+                              <p>
+                                <strong>Corrected wording:</strong>{" "}
+                                {correctedText}
+                              </p>
+                            )}
                           <button
                             type="button"
                             className="btn btn-quiet btn-sm"
@@ -153,10 +165,11 @@ export function IngredientTable({
                           >
                             Restore original reading
                           </button>
-                        </span>
+                        </div>
                       )}
                       {needsReview && (
                         <div className="review-cell">
+                          <SourceBadge kind="unresolved" />
                           <p className="small review-reason">
                             {row.review_reason ??
                               "This row is flagged for review."}
@@ -186,7 +199,7 @@ export function IngredientTable({
                       {!needsReview && rowChecked[row.id] && (
                         <p className="small muted row-check-note">
                           <CheckIcon size={14} /> You checked this row against
-                          the photo.
+                          the photo. <SourceBadge kind="confirmed" />
                         </p>
                       )}
                     </>

@@ -4,15 +4,16 @@
 import type { EvidenceItem, ProfileResult } from "@shared/contracts";
 import { StatusBadge } from "./StatusBadge";
 import { EvidenceQuote, VisualMarkEvidence } from "./EvidenceQuote";
+import { editedEvidenceKey } from "@state/applyCorrections";
 
 export function ResultCard({
   result,
-  editedLabels,
+  editedEvidence,
   onFocusPhoto,
 }: {
   result: ProfileResult;
-  /** Label texts the user edited (evidence shows "Edited by you"). */
-  editedLabels?: Set<string>;
+  /** Evidence identities mapped to browser-local corrected wording. */
+  editedEvidence: ReadonlyMap<string, string>;
   onFocusPhoto?: (imageIndex: number | null) => void;
 }) {
   return (
@@ -35,7 +36,7 @@ export function ResultCard({
               <EvidenceQuote
                 key={i}
                 evidence={ev}
-                edited={editedLabels?.has(ev.label_text ?? "") === true}
+                correctedText={editedEvidence.get(editedEvidenceKey(ev))}
                 onFocusPhoto={onFocusPhoto}
               />
             ),

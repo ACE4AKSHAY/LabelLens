@@ -5,11 +5,11 @@ import { ResultCard } from "./ResultCard";
 
 export function ResultsList({
   results,
-  editedLabels,
+  editedEvidence,
   onFocusPhoto,
 }: {
   results: Results;
-  editedLabels: Set<string>;
+  editedEvidence: ReadonlyMap<string, string>;
   onFocusPhoto: (imageIndex: number | null) => void;
 }) {
   if (results.items.length === 0) {
@@ -29,7 +29,7 @@ export function ResultsList({
         <ResultCard
           key={item.profile_key}
           result={item}
-          editedLabels={editedLabels}
+          editedEvidence={editedEvidence}
           onFocusPhoto={onFocusPhoto}
         />
       ))}

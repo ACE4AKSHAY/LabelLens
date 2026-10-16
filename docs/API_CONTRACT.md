@@ -28,6 +28,13 @@ Returns `{"status":"ok"}` when the backend process is serving requests. It does 
 - The vision model reports section completeness; it cannot observe the user's confirmation that the full panel is visible.
 - Nutrition values, units, serving basis, dates, and batch codes are preserved only when visible. Dates and batch codes are not verified externally.
 
+## Photo-quality estimates and validation limits
+
+- Image quality uses the frozen values good, blurry, cropped, glare, and unusable. It is a model estimate, not a calibrated photo-quality or OCR-accuracy score.
+- The image note may describe a visible reading obstacle such as blur, cropping, glare, curved/folded packaging, or partial obstruction. Do not guess an unseen cause. Image notes and section status are separate; a quality value never upgrades an incomplete section.
+- Browser-local corrections can change only an extracted ingredient or allergen phrase. They preserve the original evidence quote and image index, show corrected wording separately, and do not change section status or add rows. Editing leaves review_required set; the explicit “checked against the photo” action may clear only that row's review flag.
+- Mission 02 checks use fictional fixtures plus an in-memory OCR-typo case grounded in an existing fixture quote. They do not establish real-photo OCR accuracy. No live Gemini call, physical-camera check, or new manual browser visual review was performed for this mission.
+
 ## Errors
 
 Errors use the design's JSON envelope:

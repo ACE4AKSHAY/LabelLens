@@ -11,6 +11,7 @@ import { CoverageSummary } from "@components/CoverageSummary";
 import { ResultsList } from "@components/ResultsList";
 import { ConfirmCompleteness } from "@components/ConfirmCompleteness";
 import { IngredientTable } from "@components/IngredientTable";
+import { AllergenTable } from "@components/AllergenTable";
 import { NutritionTable } from "@components/NutritionTable";
 import { PackageFacts } from "@components/PackageFacts";
 import { CouldntReadPanel } from "@components/CouldntReadPanel";
@@ -19,6 +20,7 @@ import { profileSummary } from "@state/profileStore";
 import aliasMapJson from "@domain/aliasMap.json";
 import type { AliasMap } from "@domain/compareProfile";
 import { InfoIcon } from "@components/icons";
+import { collectEditedEvidence } from "@state/applyCorrections";
 
 const aliasMap = aliasMapJson as unknown as AliasMap;
 
@@ -31,9 +33,9 @@ export function ScanPage({
     scan,
     hasProfile,
     setConfirm,
-    correctIngredient,
-    restoreIngredient,
-    checkIngredientRow,
+    correctRow,
+    restoreRow,
+    checkRow,
     retakePanel,
     removePhoto,
     goCapture,
@@ -42,15 +44,13 @@ export function ScanPage({
   const { profile } = useProfile();
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
 
-  const editedLabels = useMemo(() => {
-    const set = new Set<string>();
-    for (const row of scan.extraction?.ingredients ?? []) {
-      if (scan.corrections[row.id] !== undefined || row.edited_by_user) {
-        set.add(row.label_text);
-      }
-    }
-    return set;
-  }, [scan.extraction, scan.corrections]);
+  const editedEvidence = useMemo(
+    () =>
+      scan.extraction
+        ? collectEditedEvidence(scan.extraction, scan.corrections)
+        : new Map(),
+    [scan.extraction, scan.corrections],
+  );
 
   const capturePhase = scan.phase !== "results";
 
@@ -72,6 +72,7 @@ export function ScanPage({
               <PhotoViewer
                 photos={scan.photos}
                 focusIndex={focusIndex}
+                readings={scan.extraction?.images}
                 onRetake={retakePanel}
                 onRemove={removePhoto}
               />
@@ -129,7 +130,7 @@ export function ScanPage({
               {scan.results ? (
                 <ResultsList
                   results={scan.results}
-                  editedLabels={editedLabels}
+                  editedEvidence={editedEvidence}
                   onFocusPhoto={setFocusIndex}
                 />
               ) : (
@@ -152,8 +153,10 @@ export function ScanPage({
                 </div>
                 <p className="small muted" style={{ marginBottom: 12 }}>
                   “As printed” is exactly what the pack says. “Recognized as”
-                  appears only when the alias list supports it. Fix any misreads —
-                  results re-run as you type.
+                  appears only when the alias list supports it. Save a correction
+                  to rerun the comparison immediately; corrected wording appears
+                  separately, and unresolved rows still need an explicit photo
+                  check.
                 </p>
                 {scan.extraction && (
                   <IngredientTable
@@ -161,9 +164,30 @@ export function ScanPage({
                     aliasMap={aliasMap}
                     corrections={scan.corrections}
                     rowChecked={scan.rowChecked}
-                    onCorrect={correctIngredient}
-                    onRestore={restoreIngredient}
-                    onCheckRow={checkIngredientRow}
+                    onCorrect={correctRow}
+                    onRestore={restoreRow}
+                    onCheckRow={checkRow}
+                    onFocusPhoto={setFocusIndex}
+                  />
+                )}
+              </section>
+
+              <section className="card" aria-label="Allergen statement review">
+                <div className="card-heading">
+                  <h2>Allergen statements</h2>
+                </div>
+                <p className="small muted" style={{ marginBottom: 12 }}>
+                  The photo evidence stays unchanged. Editing a phrase reruns
+                  the comparison but does not clear its review flag.
+                </p>
+                {scan.extraction && (
+                  <AllergenTable
+                    extraction={scan.extraction}
+                    corrections={scan.corrections}
+                    rowChecked={scan.rowChecked}
+                    onCorrect={correctRow}
+                    onRestore={restoreRow}
+                    onCheckRow={checkRow}
                     onFocusPhoto={setFocusIndex}
                   />
                 )}

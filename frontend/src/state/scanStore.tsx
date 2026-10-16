@@ -35,6 +35,8 @@ export interface ScanPhoto {
   id: string;
   file: File;
   url: string;
+  /** Upload index for the extraction currently shown beside this photo. */
+  readingIndex: number | null;
 }
 
 export type ScanPhase = "capture" | "reading" | "results";
@@ -44,10 +46,10 @@ export interface ScanState {
   photos: ScanPhoto[];
   extraction: Extraction | null;
   confirm: ConfirmState;
-  corrections: Record<string, string>; // ingredient id -> user-edited label_text
-  /** Ingredient ids the user tapped "I checked this row" on. */
+  corrections: Record<string, string>; // scan-local row key -> corrected label_text
+  /** Row keys the user explicitly checked against the photo. */
   rowChecked: Record<string, boolean>;
-  /** Ingredient ids whose original reading was restored after an edit. */
+  /** Ingredient row keys whose original reading was restored after an edit. */
   rowRestored: Record<string, boolean>;
   results: Results | null;
   error: { code: string; message: string; retryable: boolean } | null;
@@ -96,9 +98,9 @@ interface ScanContextValue {
   /** Dev picker: load an extraction directly as the active scan result. */
   loadFixtureDirect: (extraction: Extraction) => void;
   setConfirm: (next: Partial<ConfirmState>) => void;
-  correctIngredient: (id: string, newText: string) => void;
-  restoreIngredient: (id: string) => void;
-  checkIngredientRow: (id: string) => void;
+  correctRow: (id: string, newText: string) => void;
+  restoreRow: (id: string) => void;
+  checkRow: (id: string) => void;
   retakePanel: (photoId: string) => void;
   removePhoto: (photoId: string) => void;
   goCapture: () => void;
@@ -138,15 +140,12 @@ export function ScanProvider({
         return { ...prev, confirm, corrections, rowChecked, rowRestored, results: null };
       }
       const profile = profileRef.current;
-      const effective: Extraction = {
-        ...extraction,
-        ingredients: applyCorrections(
-          extraction.ingredients,
-          corrections,
-          rowChecked,
-          rowRestored,
-        ),
-      };
+      const effective = applyCorrections(
+        extraction,
+        corrections,
+        rowChecked,
+        rowRestored,
+      );
       const results = compareProfile(effective, profile, confirm, aliasMap);
       return { ...prev, confirm, corrections, rowChecked, rowRestored, results };
     },
@@ -171,6 +170,7 @@ export function ScanProvider({
     id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     file,
     url: URL.createObjectURL(file),
+    readingIndex: null,
   });
 
   const addPhotos = useCallback((files: File[]) => {
@@ -186,7 +186,9 @@ export function ScanProvider({
     setScan((prev) => ({
       ...prev,
       photos: prev.photos.map((p) =>
-        p.id === photoId ? { ...makePhoto(file), id: p.id } : p,
+        p.id === photoId
+          ? { ...makePhoto(file), id: p.id, readingIndex: null }
+          : p,
       ),
       error: null,
     }));
@@ -195,7 +197,20 @@ export function ScanProvider({
   const startScan = useCallback(async () => {
     if (scan.photos.length === 0) return;
     const files = scan.photos.map((p) => p.file);
-    setScan((prev) => ({ ...prev, phase: "reading", error: null }));
+    setScan((prev) => ({
+      ...prev,
+      phase: "reading",
+      photos: prev.photos.map((photo, index) => ({
+        ...photo,
+        readingIndex: index,
+      })),
+      confirm: EMPTY_CONFIRM,
+      corrections: {},
+      rowChecked: {},
+      rowRestored: {},
+      results: null,
+      error: null,
+    }));
     try {
       let outcome: ExtractOutcome;
       if (isMockMode && loadOutcome) {
@@ -265,29 +280,50 @@ export function ScanProvider({
     [recompute],
   );
 
-  const correctIngredient = useCallback(
+  const correctRow = useCallback(
     (id: string, newText: string) => {
       setScan((prev) => {
         const corrections = { ...prev.corrections, [id]: newText };
-        return recompute(prev, prev.extraction, prev.confirm, corrections, prev.rowChecked, prev.rowRestored);
+        const rowChecked = { ...prev.rowChecked };
+        const rowRestored = { ...prev.rowRestored };
+        // A new edit invalidates any earlier confirmation for this wording.
+        delete rowChecked[id];
+        delete rowRestored[id];
+        return recompute(
+          prev,
+          prev.extraction,
+          prev.confirm,
+          corrections,
+          rowChecked,
+          rowRestored,
+        );
       });
     },
     [recompute],
   );
 
-  const restoreIngredient = useCallback(
+  const restoreRow = useCallback(
     (id: string) => {
       setScan((prev) => {
         const corrections = { ...prev.corrections };
         delete corrections[id];
+        const rowChecked = { ...prev.rowChecked };
+        delete rowChecked[id];
         const rowRestored = { ...prev.rowRestored, [id]: true };
-        return recompute(prev, prev.extraction, prev.confirm, corrections, prev.rowChecked, rowRestored);
+        return recompute(
+          prev,
+          prev.extraction,
+          prev.confirm,
+          corrections,
+          rowChecked,
+          rowRestored,
+        );
       });
     },
     [recompute],
   );
 
-  const checkIngredientRow = useCallback(
+  const checkRow = useCallback(
     (id: string) => {
       setScan((prev) => {
         const rowChecked = { ...prev.rowChecked, [id]: true };
@@ -340,9 +376,9 @@ export function ScanProvider({
       startScan,
       loadFixtureDirect,
       setConfirm,
-      correctIngredient,
-      restoreIngredient,
-      checkIngredientRow,
+      correctRow,
+      restoreRow,
+      checkRow,
       retakePanel,
       removePhoto,
       goCapture,
@@ -358,9 +394,9 @@ export function ScanProvider({
       startScan,
       loadFixtureDirect,
       setConfirm,
-      correctIngredient,
-      restoreIngredient,
-      checkIngredientRow,
+      correctRow,
+      restoreRow,
+      checkRow,
       retakePanel,
       removePhoto,
       goCapture,

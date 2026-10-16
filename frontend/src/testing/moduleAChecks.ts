@@ -15,7 +15,14 @@ import {
   profileHasRestrictions,
   profileSummary,
 } from "../state/profileStore";
-import { applyCorrections } from "../state/applyCorrections";
+import {
+  applyCorrections,
+  allergenCorrectionId,
+  collectEditedEvidence,
+  editedEvidenceKey,
+} from "../state/applyCorrections";
+import { compareProfile } from "../domain/compareProfile";
+import aliasMapJson from "../domain/aliasMap.json";
 import { sampleMasalaBiscuits } from "../api/mocks/sampleMasalaBiscuits";
 import { sampleCheeseCrackers } from "../api/mocks/sampleCheeseCrackers";
 import { sampleRicePuffs } from "../api/mocks/sampleRicePuffs";
@@ -45,6 +52,7 @@ const SECTION_STATUSES: SectionStatus[] = [
   "not_uploaded",
   "ambiguous",
 ];
+const IMAGE_QUALITIES = ["good", "blurry", "cropped", "glare", "unusable"];
 
 const SEVERITY: Record<ResultStatus, number> = {
   conflict: 0,
@@ -56,6 +64,14 @@ const SEVERITY: Record<ResultStatus, number> = {
 
 function validateExtraction(pack: FixturePack) {
   const e = pack.extraction;
+  check(
+    "image quality uses frozen values and note is text or null",
+    e.images.every(
+      (img) =>
+        IMAGE_QUALITIES.includes(img.quality) &&
+        (img.note === null || typeof img.note === "string"),
+    ),
+  );
   check(`${pack.id}: schema_version "1"`, e.schema_version === "1");
   check(`${pack.id}: analysis_id present`, e.analysis_id.length > 0);
   check(
@@ -205,26 +221,130 @@ const baseRows: IngredientRow[] = [
   },
 ];
 
-const edited = applyCorrections(baseRows, { "ing-1": "Groundnut Oil" }, {}, {});
-check("edit rewrites label_text", edited[0].label_text === "Groundnut Oil");
-check("edit sets edited_by_user", edited[0].edited_by_user === true);
-check("edit alone keeps review_required", edited[0].review_required === true);
-check("untouched row unchanged", edited[1].label_text === "Salt" && !edited[1].edited_by_user);
+const correctionBase: Extraction = {
+  ...sampleCheeseCrackers.extraction,
+  ingredients: baseRows,
+};
+const edited = applyCorrections(
+  correctionBase,
+  { "ing-1": "Groundnut Oil" },
+  {},
+  {},
+);
+check("edit rewrites the effective label_text", edited.ingredients[0].label_text === "Groundnut Oil");
+check("edit marks the ingredient as user-edited", edited.ingredients[0].edited_by_user === true);
+check("edit alone keeps review_required", edited.ingredients[0].review_required === true);
+check("edit preserves source quote and image index", edited.ingredients[0].evidence_quote === "Groundnut 0il" && edited.ingredients[0].image_index === 0);
+check("edit leaves the source extraction unchanged", correctionBase.ingredients[0].label_text === "Groundnut 0il");
+check("untouched ingredient row unchanged", edited.ingredients[1].label_text === "Salt" && !edited.ingredients[1].edited_by_user);
 
-const editedAndChecked = applyCorrections(baseRows, { "ing-1": "Groundnut Oil" }, { "ing-1": true }, {});
+const editedAndChecked = applyCorrections(
+  correctionBase,
+  { "ing-1": "Groundnut Oil" },
+  { "ing-1": true },
+  {},
+);
 check(
-  "edit + I-checked-this-row clears the flag",
-  editedAndChecked[0].review_required === false && editedAndChecked[0].review_reason === null,
+  "edit plus explicit photo check clears the row flag",
+  editedAndChecked.ingredients[0].review_required === false &&
+    editedAndChecked.ingredients[0].review_reason === null,
 );
 
-const checkedOnly = applyCorrections(baseRows, {}, { "ing-1": true }, {});
+const checkedOnly = applyCorrections(correctionBase, {}, { "ing-1": true }, {});
 check(
-  "I-checked-this-row alone clears the flag without editing",
-  checkedOnly[0].review_required === false && checkedOnly[0].label_text === "Groundnut 0il" && checkedOnly[0].edited_by_user !== true,
+  "photo check alone clears the flag without editing",
+  checkedOnly.ingredients[0].review_required === false &&
+    checkedOnly.ingredients[0].label_text === "Groundnut 0il" &&
+    checkedOnly.ingredients[0].edited_by_user !== true,
 );
 
-const restored = applyCorrections(edited, {}, {}, { "ing-1": true });
-check("restore keeps original text but drops the edited flag", restored[0].label_text === "Groundnut Oil" && restored[0].edited_by_user === false);
+const restored = applyCorrections(correctionBase, {}, {}, { "ing-1": true });
+check("restore keeps original text and drops the edited flag", restored.ingredients[0].label_text === "Groundnut 0il" && restored.ingredients[0].edited_by_user === false);
+
+const originalAllergen = sampleCheeseCrackers.extraction.allergen_statements.contains[0];
+const unclearAllergen: Extraction = {
+  ...sampleCheeseCrackers.extraction,
+  allergen_statements: {
+    ...sampleCheeseCrackers.extraction.allergen_statements,
+    contains: [
+      {
+        ...originalAllergen,
+        label_text: "Wheat, Mi1k",
+        review_required: true,
+        review_reason: "Unclear character in the photo reading.",
+      },
+    ],
+  },
+};
+const allergenId = allergenCorrectionId("contains", 0);
+const allergenCorrection = { [allergenId]: "Wheat, Milk" };
+const correctedAllergen = applyCorrections(
+  unclearAllergen,
+  allergenCorrection,
+  {},
+  {},
+);
+const correctedPhrase = correctedAllergen.allergen_statements.contains[0];
+check("allergen phrase correction updates the effective text", correctedPhrase.label_text === "Wheat, Milk");
+check("allergen edit alone keeps the phrase unresolved", correctedPhrase.review_required && correctedPhrase.review_reason !== null);
+check("allergen edit preserves original quote and image index", correctedPhrase.evidence_quote === originalAllergen.evidence_quote && correctedPhrase.image_index === originalAllergen.image_index);
+check("allergen edit does not add or remove phrases", correctedAllergen.allergen_statements.contains.length === unclearAllergen.allergen_statements.contains.length);
+check("allergen correction leaves source extraction unchanged", unclearAllergen.allergen_statements.contains[0].label_text === "Wheat, Mi1k");
+const milkComparison = compareProfile(
+  correctedAllergen,
+  { schema_version: "1", allergens: ["milk"], custom_avoid: [], diet: "none" },
+  { ingredients_complete: false, allergen_statement_complete: false, pack_has_no_allergen_statement: false },
+  aliasMapJson as unknown as Parameters<typeof compareProfile>[3],
+);
+const milkEvidence = milkComparison.items[0]?.evidence.find(
+  (item) => item.evidence_quote === originalAllergen.evidence_quote,
+);
+check("allergen correction recomputes evidence with corrected wording", milkEvidence?.label_text === "Wheat, Milk" && milkEvidence.evidence_quote === originalAllergen.evidence_quote);
+const allergenEvidence = collectEditedEvidence(unclearAllergen, allergenCorrection);
+const correctedAllergenKey = editedEvidenceKey({
+  section: "allergen_statement",
+  evidence_quote: originalAllergen.evidence_quote,
+  image_index: originalAllergen.image_index,
+  label_text: "Wheat, Milk",
+});
+check("edited evidence lookup includes source quote, image, and corrected phrase", allergenEvidence.get(correctedAllergenKey) === "Wheat, Milk");
+const confirmedAllergen = applyCorrections(
+  unclearAllergen,
+  allergenCorrection,
+  { [allergenId]: true },
+  {},
+).allergen_statements.contains[0];
+check("only explicit photo confirmation clears allergen review", !confirmedAllergen.review_required && confirmedAllergen.review_reason === null);
+
+const unclearPartial: Extraction = {
+  ...sampleChocoBar.extraction,
+  ingredients: sampleChocoBar.extraction.ingredients.map((row, index) =>
+    index === 0
+      ? {
+          ...row,
+          label_text: "Suger",
+          review_required: true,
+          review_reason: "Unclear character in the photo reading.",
+        }
+      : row,
+  ),
+};
+const partialCorrected = applyCorrections(
+  unclearPartial,
+  { "ing-1": "Sugar" },
+  { "ing-1": true },
+  {},
+);
+check("row correction and confirmation do not upgrade partial section status", partialCorrected.sections.ingredients.status === "readable_partial");
+check("unuploaded allergen section stays unresolved after a row correction", partialCorrected.sections.allergen_statement.status === "not_uploaded");
+check("partial extraction keeps allergen arrays empty", partialCorrected.allergen_statements.contains.length === 0 && partialCorrected.allergen_statements.may_contain.length === 0 && partialCorrected.allergen_statements.other.length === 0);
+const partialResults = compareProfile(
+  partialCorrected,
+  { schema_version: "1", allergens: ["peanut"], custom_avoid: [], diet: "none" },
+  { ingredients_complete: true, allergen_statement_complete: true, pack_has_no_allergen_statement: false },
+  aliasMapJson as unknown as Parameters<typeof compareProfile>[3],
+);
+check("correcting and confirming a row in partial extraction cannot produce no-match", partialResults.items.every((item) => item.status === "unknown"));
 
 // --- 3. Mock fixture packs ---------------------------------------------------
 
