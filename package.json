@@ -1,0 +1,14 @@
+{
+  "name": "labelens-root",
+  "private": true,
+  "version": "0.1.0",
+  "description": "LabelLens — evidence-first packaged-food label reader (modular MVP).",
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "check:rules": "cd frontend && npm run check:rules",
+    "install:frontend": "cd frontend && npm install"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
