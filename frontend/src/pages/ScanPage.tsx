@@ -21,6 +21,7 @@ import aliasMapJson from "@domain/aliasMap.json";
 import type { AliasMap } from "@domain/compareProfile";
 import { InfoIcon } from "@components/icons";
 import { collectEditedEvidence } from "@state/applyCorrections";
+import { downloadScanCsv } from "@state/scanExport";
 
 const aliasMap = aliasMapJson as unknown as AliasMap;
 
@@ -123,6 +124,33 @@ export function ScanPage({
                 results={scan.results!}
                 packHasNoAllergenStatement={scan.confirm.pack_has_no_allergen_statement}
               />
+              <div className="scan-export-actions" role="group" aria-label="Export scan results">
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  disabled={!scan.extraction || !scan.results}
+                  onClick={() => {
+                    if (!scan.extraction || !scan.results) return;
+                    downloadScanCsv({
+                      extraction: scan.extraction,
+                      results: scan.results,
+                      confirm: scan.confirm,
+                      corrections: scan.corrections,
+                      rowChecked: scan.rowChecked,
+                      rowRestored: scan.rowRestored,
+                    });
+                  }}
+                >
+                  Download CSV
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-quiet btn-sm"
+                  onClick={() => window.print()}
+                >
+                  Print / Save as PDF
+                </button>
+              </div>
             </div>
 
             {/* Result cards */}

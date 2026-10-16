@@ -583,6 +583,13 @@ button.step-chip.step-current:hover {
   padding-top: var(--sp-1);
 }
 
+.scan-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+}
+
 /* --- Confirm ------------------------------------------------------------------- */
 
 .confirm-intro {
@@ -901,5 +908,65 @@ button.step-chip.step-current:hover {
     bottom: 8px;
     z-index: 10;
     border-color: var(--border-strong);
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body {
+    color: #111;
+    background: #fff;
+    font-size: 10pt;
+  }
+
+  .app-header,
+  .app-footer,
+  .skip-link,
+  .step-strip,
+  .scan-results button {
+    display: none !important;
+  }
+
+  .scan-results .workspace {
+    display: block;
+  }
+
+  .app-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .scan-results .actions-card,
+  .scan-results .scan-export-actions {
+    display: none !important;
+  }
+
+  .scan-results .ws-photo {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .scan-results .photo-frame,
+  .scan-results .result-card {
+    break-inside: avoid;
+  }
+
+  .scan-results .photo-frame img {
+    max-height: 7cm;
+  }
+
+  .scan-results .card,
+  .scan-results .result-card {
+    color: #111;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  .scan-results .table-wrap {
+    overflow: visible;
   }
 }

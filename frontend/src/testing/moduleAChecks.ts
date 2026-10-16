@@ -22,6 +22,7 @@ import {
   editedEvidenceKey,
 } from "../state/applyCorrections";
 import { compareProfile } from "../domain/compareProfile";
+import { buildScanCsv, escapeCsvCell } from "../state/scanExport";
 import aliasMapJson from "../domain/aliasMap.json";
 import { sampleMasalaBiscuits } from "../api/mocks/sampleMasalaBiscuits";
 import { sampleCheeseCrackers } from "../api/mocks/sampleCheeseCrackers";
@@ -345,6 +346,35 @@ const partialResults = compareProfile(
   aliasMapJson as unknown as Parameters<typeof compareProfile>[3],
 );
 check("correcting and confirming a row in partial extraction cannot produce no-match", partialResults.items.every((item) => item.status === "unknown"));
+
+// --- 2b. Current-scan export -----------------------------------------------
+
+console.log("\nCurrent-scan export");
+const correctedAllergenCsv = buildScanCsv({
+  extraction: unclearAllergen,
+  results: milkComparison,
+  confirm: { ingredients_complete: false, allergen_statement_complete: false, pack_has_no_allergen_statement: false },
+  corrections: allergenCorrection,
+  rowChecked: {},
+  rowRestored: {},
+});
+check("CSV starts with an Excel-friendly UTF-8 BOM and CRLF rows", correctedAllergenCsv.startsWith("\uFEFF") && correctedAllergenCsv.includes("\r\n"));
+check("CSV keeps a corrected allergen value separate from its original evidence", correctedAllergenCsv.includes('"Wheat, Milk","Wheat, Mi1k"') && correctedAllergenCsv.includes(originalAllergen.evidence_quote));
+check("CSV carries the comparison status and rule", correctedAllergenCsv.includes("possible_conflict") && correctedAllergenCsv.includes("R3"));
+check("CSV labels edited but unconfirmed evidence unresolved", correctedAllergenCsv.includes("user-corrected; unresolved") && correctedAllergenCsv.includes(",true,"));
+check("CSV records missing and partial sections without claiming absence", (() => {
+  const csv = buildScanCsv({
+    extraction: unclearPartial,
+    results: partialResults,
+    confirm: { ingredients_complete: true, allergen_statement_complete: true, pack_has_no_allergen_statement: false },
+    corrections: { "ing-1": "Sugar" },
+    rowChecked: { "ing-1": true },
+    rowRestored: {},
+  });
+  return csv.includes("readable_partial") && csv.includes("not_uploaded") &&
+    csv.includes("No rows extracted; absence is not confirmed") && !csv.includes("no_match_found");
+})());
+check("CSV quotes cells and neutralizes formula-like values", escapeCsvCell("a,b\"c") === '"a,b""c"' && escapeCsvCell("=1+1") === "'=1+1");
 
 // --- 3. Mock fixture packs ---------------------------------------------------
 
