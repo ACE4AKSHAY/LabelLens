@@ -1,0 +1,11 @@
+{
+  "name": "labellens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LabelLens golden-case check (Module C). Frontend and backend live in frontend/ and backend/.",
+  "scripts": {
+    "check:rules": "node scripts/check_rules.mjs",
+    "validate:fixtures": "python scripts/validate_fixtures.py"
+  }
+}
