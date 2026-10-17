@@ -12,7 +12,7 @@ Returns `{"status":"ok"}` when the backend process is serving requests. It does 
 
 - Request: `multipart/form-data`, with 1–3 files under the repeated field name `images`.
 - Accepted media types: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, and `image/heif`.
-- Limits: 10 MiB per image and 14 MiB total by default; the total can be lowered with backend environment variables but cannot exceed the safe inline-request cap.
+- Limits: 10 MiB per image and 14 MiB total by default for a direct backend deployment. The Vercel deployment uses 4 MiB per image and 4 MiB total to stay below Vercel Functions' 4.5 MB request-body limit, including multipart overhead.
 - Response: one `Extraction` JSON object, exactly as defined in `shared/contracts.ts`.
 - The request must not contain a dietary profile. The backend rejects form fields other than `images`; profile comparison stays in the browser.
 - Image indices in the response are zero-based and refer to upload order.

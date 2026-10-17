@@ -13,8 +13,10 @@ const ACCEPTED_MIME = [
   "image/heic",
   "image/heif",
 ];
-const MAX_PER_IMAGE = 10 * 1024 * 1024; // 10 MiB per docs/API_CONTRACT.md
-const MAX_TOTAL = 14 * 1024 * 1024; // 14 MiB total
+// Stay comfortably below Vercel Functions' 4.5 MB request-body limit,
+// including multipart form-data overhead.
+const MAX_PER_IMAGE = 4 * 1024 * 1024; // 4 MiB per image
+const MAX_TOTAL = 4 * 1024 * 1024; // 4 MiB total
 const MAX_IMAGES = 3;
 
 export function extractMode(): "mock" | "live" {
@@ -56,7 +58,7 @@ function validateFiles(files: File[]): void {
     if (file.size > MAX_PER_IMAGE) {
       throw new ExtractError(
         "bad_input",
-        `“${file.name}” is larger than 10 MB. Retake it closer to the panel so the file is smaller.`,
+        `“${file.name}” is larger than 4 MiB. Retake it closer to the panel so the file is smaller.`,
       );
     }
     total += file.size;
@@ -64,7 +66,7 @@ function validateFiles(files: File[]): void {
   if (total > MAX_TOTAL) {
     throw new ExtractError(
       "bad_input",
-      "The photos together exceed 14 MB. Retake or remove one and try again.",
+      "The photos together exceed 4 MiB. Retake or remove one and try again.",
     );
   }
 }

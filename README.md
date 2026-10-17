@@ -73,7 +73,7 @@ The default is mock mode. To use live extraction, configure the backend provider
 
 ## Bring Your Own Key (BYOK)
 
-Live extraction uses the API key supplied by the person operating the local backend. Keep it in `backend/.env`; never place it in frontend code, commit it, or show it in a screenshot or recording. Label photos are sent to the selected vision provider for live extraction. Dietary preferences remain in the browser and are not sent to the backend. The key owner is responsible for provider access, quotas, billing, and current terms. See [API and privacy details](docs/API_CONTRACT.md).
+For local use, live extraction uses the API key supplied by the person operating the backend and stored in the ignored `backend/.env`. In a deployed judge demo, the operator's key is stored as a server-side Vercel environment variable and is shared to serve scans; visitors do not enter their own key. Never put a provider key in frontend code, commit it, or show it in a screenshot or recording. Label photos are sent to the selected vision provider for live extraction. Dietary preferences remain in the browser and are not sent to the backend. The key owner is responsible for provider access, quotas, billing, and current terms. See [API and privacy details](docs/API_CONTRACT.md) and the [Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md).
 
 ## Architecture
 

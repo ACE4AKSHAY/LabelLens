@@ -43,6 +43,14 @@ Set `VITE_EXTRACT_MODE=live` in the ignored `frontend/.env`, then restart both s
 - `MAX_IMAGE_BYTES` — default 10 MiB per image.
 - `MAX_TOTAL_IMAGE_BYTES` — default and maximum 14 MiB per request; lower values are supported.
 
+### Vercel deployment
+
+The Vercel deployment uses the `services` configuration in the repository-root `vercel.json` to route the React app and FastAPI backend on one deployment URL. In Vercel, set the project's Framework Preset to **Services**. Enable **Include source files outside of the Root Directory in the Build Step** so the Vite service can resolve the shared contract from `../shared`.
+
+Vercel Functions limit request bodies to 4.5 MB, so set `MAX_IMAGE_BYTES=4194304` and `MAX_TOTAL_IMAGE_BYTES=4194304` in the Vercel project. The frontend also enforces the 4 MiB aggregate limit. Configure `EXTRACT_MODE=live`, `VISION_PROVIDER=gemini`, and `VITE_EXTRACT_MODE=live`; store `GEMINI_API_KEY` as a server-side Vercel environment variable only. Apply these variables to the Production environment and redeploy after changing them. Never use a `VITE_` prefix for a provider key.
+
+Live mode uses the project's server-side Gemini key for scans. The API endpoint is public and currently has no authentication or request-rate limit, so anyone who can access the deployment could use the project's Gemini quota. For a short judge demo, monitor provider usage and revoke/delete the Google AI Studio key immediately afterward; deleting only the Vercel variable does not invalidate a copied key. To switch back to sample mode, set both extraction mode variables to `mock` and redeploy.
+
 Before any live call, provide the provider disclosure described in `docs/API_CONTRACT.md`. Review the selected provider's current API terms and account limits before sending real package photos. Public shopper-facing use remains unresolved for LabelLens; keep mock mode for demos until that is confirmed. Never claim provider-side deletion.
 
 Gemini requests time out after 30 seconds. Fast 503/overloaded responses may retry with 1- and 2-second backoff; slower overload responses go directly to cross-provider failover. GLM requests time out after 12 seconds. Every provider result, including fallback results, receives evidence validation against the frozen contract.
@@ -59,7 +67,7 @@ The CLI uses the same mock/live setting as the API. In live mode it sends the im
 
 ## Request logs and troubleshooting
 
-Each API response includes an `X-Request-ID`. The backend writes provider/model attempts, fallback decisions, HTTP status, elapsed time, and extraction row counts to the terminal and `backend/logs/labellens.log` (rotated at 2 MiB, three backups). It never logs API keys, photos, profile data, or extracted label text. It logs a warning if both ingredient and allergen sections are marked complete but contain no extracted rows. A fallback makes another provider request and can add latency and usage. Give the request ID to the developer when reporting an error.
+Each API response includes an `X-Request-ID`. Locally, the backend writes provider/model attempts, fallback decisions, HTTP status, elapsed time, and extraction row counts to the terminal and `backend/logs/labellens.log` (rotated at 2 MiB, three backups). On Vercel, logs go to the function's console because its deployment bundle is read-only. It never logs API keys, photos, profile data, or extracted label text. It logs a warning if both ingredient and allergen sections are marked complete but contain no extracted rows. A fallback makes another provider request and can add latency and usage. Give the request ID to the developer when reporting an error.
 
 Gemini is the default primary provider. With `GEMINI_API_KEY_2` configured, quota, 503, and timeout errors retry the same scan with the second Google account's key. With `GLM_API_KEY` also configured, errors that exhaust the Gemini keys fall back to GLM; with `VISION_PROVIDER=glm` and `GEMINI_API_KEY` configured, retryable GLM errors can fall back to Gemini. Credential errors do not trigger fallback; quota errors can fail over only when a secondary key is configured. If every configured provider fails, quota classification is preserved when any failure is a quota error.
 
