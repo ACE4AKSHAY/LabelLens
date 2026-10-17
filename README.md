@@ -26,6 +26,8 @@ See the [full sanitized scan summary](docs/demo/scan-result-summary.md) for the 
 
 The two screen recordings are available in the [LabelLens demo recordings folder on Google Drive](https://drive.google.com/drive/folders/11tJswL4NJnAskwMH4VVf0o9nWkEmd1_l?usp=drive_link).
 
+The project overview is available as [LabelLens — read the label, see the evidence](docs/LabelLens-Read-the-Label-See-the-Evidence.pdf).
+
 ## Features
 
 - Photo-based label extraction with evidence quotes tied to the source image.
