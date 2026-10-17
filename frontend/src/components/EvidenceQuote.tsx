@@ -50,7 +50,7 @@ export function EvidenceQuote({
             onClick={() => onFocusPhoto(evidence.image_index)}
           >
             <ZoomIcon size={15} />
-            Show on photo
+            Open photo
           </button>
         )}
       </figcaption>
@@ -81,7 +81,7 @@ export function VisualMarkEvidence({
             onClick={() => onFocusPhoto(evidence.image_index)}
           >
             <ZoomIcon size={15} />
-            Show on photo
+            Open photo
           </button>
         )}
       </figcaption>

@@ -1,6 +1,6 @@
 // WarningsPanel: surfaces extraction.warnings in the results view. Each
 // warning keeps the exact printed phrase (when the warning references one)
-// and its "Show on photo" link; an "Inspect reading" action jumps to the row
+// and its "Open photo" link; an "Inspect reading" action jumps to the row
 // in the review tables. Warnings are reading flags to double-check — never
 // verdicts, never confirmations.
 
@@ -53,7 +53,7 @@ export function WarningsPanel({
                 onClick={() => onFocusPhoto(links.photoIndex)}
               >
                 <ZoomIcon size={15} />
-                Show on photo {links.photoIndex + 1}
+                Open photo {links.photoIndex + 1}
               </button>
             )}
             {links.rows.map((row) => (
@@ -72,7 +72,7 @@ export function WarningsPanel({
                       onClick={() => onFocusPhoto(row.imageIndex)}
                     >
                       <ZoomIcon size={15} />
-                      Show on photo
+                      Open photo
                     </button>
                   )}
                   <button

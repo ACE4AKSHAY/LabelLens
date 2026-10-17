@@ -193,7 +193,7 @@ export function AllergenTable({
                           onClick={() => onFocusPhoto(phrase.image_index)}
                         >
                           <ZoomIcon size={15} />
-                          Show on photo
+                          Open photo
                         </button>
                       )}
                     </div>

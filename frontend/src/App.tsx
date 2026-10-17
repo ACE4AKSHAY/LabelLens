@@ -80,7 +80,7 @@ function AppBody({
         <div className="app-header-inner">
           <div className="brand">
             <span className="brand-mark" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 32 32" focusable="false">
+              <svg width="24" height="24" viewBox="0 0 32 32" focusable="false">
                 <circle cx="14" cy="14" r="7" fill="none" stroke="currentColor" strokeWidth="2.4" />
                 <line x1="19" y1="19" x2="25" y2="25" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
               </svg>
@@ -111,23 +111,22 @@ function AppBody({
               Start over
             </button>
           </div>
+          <StepStrip current={current} maxReached={maxReached} onGo={goStep} />
         </div>
       </header>
 
       <main className="app-main" id="main-content">
-        <StepStrip current={current} maxReached={maxReached} onGo={goStep} />
-
         {scan.phase === "reading" ? (
           <>
-            <section className="card reading-card" aria-live="polite" aria-busy="true">
-              <div className="reading-spinner" role="status" aria-label="Reading photos" />
-              <p className="reading-title">Reading the label…</p>
-              <p className="muted small">
-                We transcribe visible words, preserve source evidence, and flag
-                anything the model cannot read. The primary model can use its
-                configured fallback if it fails.
+            <section className="page reading" aria-live="polite" aria-busy="true">
+              <p className="caps">Please wait</p>
+              <h1>Reading the label…</h1>
+              <p className="lede">
+                We transcribe visible wording, preserve its source, and mark
+                anything unclear as unreadable. Your profile stays in this
+                browser; the backend may try a configured fallback if needed.
               </p>
-              <p className="reading-elapsed small muted">
+              <p className="small muted reading-elapsed">
                 {elapsedSeconds < 30
                   ? "Waiting for the vision service"
                   : elapsedSeconds < 60
@@ -138,6 +137,11 @@ function AppBody({
               <div className="reading-bar" aria-hidden="true">
                 <div className="reading-bar-fill" />
               </div>
+              <ul className="doing">
+                <li><span aria-hidden="true">01</span>Copying the printed wording</li>
+                <li><span aria-hidden="true">02</span>Marking what can't be read</li>
+                <li><span aria-hidden="true">03</span>Then your profile is compared here, in this browser</li>
+              </ul>
             </section>
             <PersistentNote compact />
           </>
@@ -150,7 +154,7 @@ function AppBody({
 
       <footer className="app-footer">
         <PersistentNote compact />
-        <p className="small muted">
+        <p className="small muted foot-line">
           Not a medical tool · No health scores · Your profile stays in this
           browser
         </p>

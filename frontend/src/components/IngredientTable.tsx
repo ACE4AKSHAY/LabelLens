@@ -246,7 +246,7 @@ export function IngredientTable({
                                 onClick={() => onFocusPhoto(row.image_index)}
                               >
                                 <ZoomIcon size={15} />
-                                Show on photo
+                                Open photo
                               </button>
                             )}
                           </div>

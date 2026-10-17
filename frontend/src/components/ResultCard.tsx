@@ -1,5 +1,5 @@
 // One profile item's answer (Section 9 ResultCard): status badge, profile
-// item, one-line reason, evidence list, "show on photo" on each evidence item.
+// item, one-line reason, evidence list, and a link to open its source photo.
 
 import type { EvidenceItem, ProfileResult } from "@shared/contracts";
 import { StatusBadge } from "./StatusBadge";

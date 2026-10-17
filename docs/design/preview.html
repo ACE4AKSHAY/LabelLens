@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LabelLens redesign preview — Printed Label / Aisle View</title>
+<style>
+:root{
+  --paper:#f5f0e4; --paper-2:#ece5d3; --sheet:#fbf8f0; --rule:#d6ccb4; --rule-strong:#a39a80;
+  --ink:#1c1a16; --ink-2:#47433a; --ink-3:#645f50;
+  --accent:#34379a; --accent-hover:#272a7e; --accent-soft:#e3e2f2; --on-accent:#fff; --focus:#34379a;
+  --st-conflict:#a52a16; --st-conflict-bg:#f6e0da;
+  --st-possible:#7a4e00; --st-possible-bg:#f6e8c8;
+  --st-unknown:#3d4858; --st-unknown-bg:#e4e7ec;
+  --st-nomatch:#55564e; --st-nomatch-bg:#ece8dc;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
+  --r1:3px; --r2:8px; --r3:14px;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,"Courier New",monospace;
+  --tap:44px;
+}
+@media (prefers-color-scheme:dark){:root{color-scheme:light}} /* preview is paper-only by design */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper-2);color:var(--ink);font:16px/1.5 var(--sans);font-variant-numeric:tabular-nums}
+.canvas{max-width:1500px;margin:0 auto;padding:var(--s5) var(--s4) var(--s7)}
+.canvas>h1{font:700 28px/1.2 var(--serif);margin:0 0 var(--s2)}
+.canvas>p{margin:0 0 var(--s5);color:var(--ink-2);max-width:70ch}
+.boards{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:var(--s6) var(--s5);align-items:start}
+.board h2{font:600 12px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 var(--s2)}
+.board.wide{grid-column:1/-1}
+.phone{width:360px;max-width:100%;background:var(--paper);border:1px solid var(--rule-strong);border-radius:var(--r3);overflow:hidden;display:flex;flex-direction:column;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .35 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
+.desk{width:100%;max-width:1040px;background:var(--paper);border:1px solid var(--rule-strong);border-radius:var(--r3);overflow:hidden}
+
+/* ---------- base components ---------- */
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.caps{font:600 11.5px/1.2 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.h1{font:700 28px/1.15 var(--serif);letter-spacing:-.01em;margin:0}
+.h2{font:700 20px/1.25 var(--serif);margin:0}
+.lede{color:var(--ink-2);margin:var(--s2) 0 0;font-size:15px}
+.small{font-size:13.5px}
+.muted{color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--rule);margin:0}
+.rule-2{border:0;border-top:3px double var(--rule-strong);margin:0}
+
+.btn{min-height:var(--tap);padding:0 var(--s4);border-radius:var(--r2);border:1.5px solid var(--ink);background:transparent;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);cursor:pointer;transition:background-color .12s,border-color .12s}
+.btn:hover{background:var(--paper-2)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn-quiet{border-color:transparent;color:var(--accent);padding:0 var(--s3)}
+.btn-quiet:hover{background:var(--accent-soft)}
+.btn-block{width:100%}
+.btn-sm{font-size:14px;padding:0 var(--s3)}
+
+.app-head{display:flex;align-items:center;justify-content:space-between;padding:var(--s2) var(--s4);border-bottom:1px solid var(--rule)}
+.brand{display:flex;align-items:center;gap:var(--s2);font:700 19px/1 var(--serif)}
+.brand svg{color:var(--accent)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);margin:0;padding:0 var(--s4);list-style:none;border-bottom:1px solid var(--rule)}
+.steps li{padding:var(--s3) 0 var(--s2);font:600 12.5px/1.2 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);border-bottom:3px solid transparent;margin-bottom:-1px;min-height:var(--tap);display:flex;align-items:center;gap:6px}
+.steps li b{font-family:var(--serif);font-size:15px}
+.steps li[aria-current]{color:var(--ink);border-bottom-color:var(--accent)}
+.steps li.done{color:var(--ink-2)}
+.page{padding:var(--s5) var(--s4) var(--s5);display:flex;flex-direction:column;gap:var(--s5);flex:1}
+.bar{position:sticky;bottom:0;display:flex;gap:var(--s2);padding:var(--s3) var(--s4) calc(var(--s3) + env(safe-area-inset-bottom,0px));background:var(--sheet);border-top:1px solid var(--rule-strong)}
+.bar .btn-primary{flex:1}
+.foot{padding:var(--s3) var(--s4) var(--s4);font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--rule)}
+.foot p{margin:0}
+
+/* forms */
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{padding:0;margin-bottom:var(--s3)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.opt{position:relative;display:flex;align-items:center;gap:var(--s2);min-height:var(--tap);padding:var(--s2) var(--s3);border:1.5px solid var(--rule-strong);border-radius:var(--r2);background:var(--sheet);cursor:pointer;font-size:15px}
+.opt input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.opt .box{width:20px;height:20px;border:2px solid var(--ink-2);border-radius:var(--r1);flex:none;display:grid;place-items:center;background:#fff}
+.opt .box svg{opacity:0}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.opt:has(input:checked) .box{background:var(--accent);border-color:var(--accent);color:#fff}
+.opt:has(input:checked) .box svg{opacity:1}
+.opt:has(input:focus-visible){outline:3px solid var(--focus);outline-offset:2px}
+.opt.radio .box{border-radius:50%}
+.opt.radio:has(input:checked) .box svg{display:none}
+.opt.radio:has(input:checked) .box{box-shadow:inset 0 0 0 4px #fff}
+.opts.col1{grid-template-columns:1fr}
+.opt small{display:block;font-weight:400;color:var(--ink-2);font-size:13px}
+.field{display:flex;gap:var(--s2)}
+.field input[type=text]{flex:1;min-width:0;min-height:var(--tap);padding:0 var(--s3);border:1.5px solid var(--rule-strong);border-radius:var(--r2);background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)}
+.chip{display:inline-flex;align-items:center;gap:var(--s1);min-height:36px;padding:0 var(--s1) 0 var(--s3);border:1.5px solid var(--ink);border-radius:999px;font-size:14px;font-weight:600}
+.chip button{width:var(--tap);height:var(--tap);margin:-4px -4px -4px 0;border:0;background:none;display:grid;place-items:center;cursor:pointer;border-radius:50%}
+
+/* notices */
+.notice{display:flex;gap:var(--s3);padding:var(--s3) var(--s4);border:1px solid var(--rule-strong);border-left:4px solid var(--ink-2);background:var(--sheet);border-radius:var(--r1);font-size:14px}
+.notice svg{flex:none;margin-top:2px}
+.notice p{margin:0}.notice p+p{margin-top:var(--s1)}
+.notice.err{border-left-color:var(--st-conflict);border-left-style:solid}
+.notice.err strong{color:var(--st-conflict)}
+
+/* status */
+.badge{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 var(--s3) 0 var(--s2);border:1.5px solid currentColor;border-radius:var(--r1);font:700 12.5px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+.badge svg{flex:none}
+.s-conflict{color:var(--st-conflict);background:var(--st-conflict-bg);border-style:solid}
+.s-possible{color:var(--st-possible);background:var(--st-possible-bg);border-style:dashed}
+.s-unknown{color:var(--st-unknown);background:var(--st-unknown-bg);border-style:dotted}
+.s-nomatch{color:var(--st-nomatch);background:var(--st-nomatch-bg);border-style:solid;border-width:1px}
+.badge.s-nomatch{font-weight:600}
+
+/* source badges */
+.src{display:inline-flex;align-items:center;gap:5px;font:600 11.5px/1 var(--sans);letter-spacing:.04em;color:var(--ink-2);min-height:22px;padding:0 var(--s2);border:1px solid var(--rule-strong);border-radius:var(--r1);background:var(--sheet);white-space:nowrap}
+.src.photo::before{content:"";width:8px;height:8px;background:var(--ink);border-radius:1px}
+.src.edited{border-color:var(--accent);color:var(--accent)}
+.src.edited::before{content:"";width:8px;height:8px;border:2px solid var(--accent);transform:rotate(45deg)}
+.src.review{border-style:dashed;color:var(--st-possible);border-color:var(--st-possible)}
+.src.review::before{content:"?";font-weight:800}
+.src.catalog{border-style:dashed;background:repeating-linear-gradient(135deg,transparent 0 5px,var(--paper-2) 5px 6px);color:var(--ink)}
+.src.catalog::before{content:"@";font-weight:800}
+
+/* results */
+.product{display:flex;flex-direction:column;gap:var(--s1)}
+.product .name{font:700 26px/1.15 var(--serif)}
+.tally{display:grid;grid-template-columns:repeat(4,1fr);border:1.5px solid var(--ink);border-radius:var(--r1);background:var(--sheet)}
+.tally div{padding:var(--s3) var(--s2);text-align:center;border-left:1px solid var(--rule)}
+.tally div:first-child{border-left:0}
+.tally .n{display:block;font:700 30px/1 var(--serif)}
+.tally .l{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:6px;font:600 10.5px/1.15 var(--sans);letter-spacing:.06em;text-transform:uppercase}
+.tally .c{color:var(--st-conflict)}.tally .p{color:var(--st-possible)}.tally .u{color:var(--st-unknown)}.tally .m{color:var(--st-nomatch)}
+.basis{margin:var(--s2) 0 0;font-size:13.5px;color:var(--ink-2)}
+.entry{border-top:3px solid var(--ink);padding:var(--s4) 0 var(--s2);display:flex;flex-direction:column;gap:var(--s3)}
+.entry.e-conflict{border-top:4px solid var(--st-conflict)}
+.entry.e-possible{border-top:4px dashed var(--st-possible)}
+.entry.e-unknown{border-top:4px dotted var(--st-unknown)}
+.entry.e-nomatch{border-top:1px solid var(--rule-strong)}
+.entry-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3)}
+.entry h3{font:700 22px/1.2 var(--serif);margin:0}
+.entry .reason{margin:0;font-size:15px}
+.quote{margin:0;border:1px solid var(--rule-strong);background:var(--sheet);border-radius:var(--r1)}
+.quote .qh{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);flex-wrap:wrap;padding:var(--s2) var(--s3);border-bottom:1px dashed var(--rule-strong)}
+.quote blockquote{margin:0;padding:var(--s3);font:500 15.5px/1.5 var(--mono);letter-spacing:-.01em;overflow-wrap:anywhere}
+.quote mark{background:none;font-weight:800;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.quote .read{display:flex;gap:var(--s2);flex-wrap:wrap;align-items:baseline;padding:var(--s2) var(--s3) var(--s3);border-top:1px solid var(--rule);font-size:13.5px;color:var(--ink-2)}
+.quote .read b{font-family:var(--serif);font-size:15px;color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:0}
+.kv>*{padding:var(--s2) 0;border-top:1px solid var(--rule);font-size:14.5px}
+.kv dt{color:var(--ink-3);font:600 11.5px/1.5 var(--sans);letter-spacing:.08em;text-transform:uppercase;padding-right:var(--s4);display:flex;align-items:center}
+.kv dd{margin:0}
+.state{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.sect-title{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);border-bottom:3px double var(--rule-strong);padding-bottom:var(--s2);margin:0 0 var(--s2)}
+.catalog-box{border:1.5px dashed var(--rule-strong);border-radius:var(--r1);padding:var(--s4);background:repeating-linear-gradient(135deg,transparent 0 9px,rgba(0,0,0,.025) 9px 10px)}
+.catalog-box p{margin:var(--s2) 0 0}
+
+/* ledger */
+.ledger{width:100%;border-collapse:collapse;font-size:14.5px}
+.ledger th{font:600 11px/1.2 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:var(--s2) var(--s2) var(--s2) 0;border-bottom:1.5px solid var(--ink)}
+.ledger td{padding:var(--s3) var(--s2) var(--s3) 0;border-bottom:1px solid var(--rule);vertical-align:top}
+.ledger td.n{width:28px;color:var(--ink-3);font-family:var(--mono);font-size:13px}
+.ledger .w{font:500 14.5px/1.4 var(--mono);overflow-wrap:anywhere}
+.ledger .as{display:block;margin-top:6px;font-size:13.5px;color:var(--ink-2)}
+.ledger .as b{font-family:var(--serif);font-size:15px;color:var(--ink)}
+.ledger tr.hit td{background:linear-gradient(90deg,var(--st-conflict-bg),transparent 85%)}
+.ledger .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;padding-right:0}
+.ledger .num+.num{padding-left:var(--s2)}
+.ledger th.num{text-align:right}
+.flag{display:inline-flex;align-items:center;gap:4px;margin-top:6px;margin-right:6px}
+.tbl-wrap{overflow-x:auto}
+
+/* photo */
+.shot{margin:0;border:1px solid var(--rule-strong);background:var(--sheet);border-radius:var(--r1)}
+.shot svg{display:block;width:100%;height:auto;background:#d9d2bd}
+.shot figcaption{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);padding:var(--s1) var(--s3)}
+.segs{display:flex;border:1.5px solid var(--ink);border-radius:var(--r2);overflow:hidden}
+.segs button{flex:1;min-height:var(--tap);border:0;border-left:1px solid var(--ink);background:transparent;font-weight:600;cursor:pointer}
+.segs button:first-child{border-left:0}
+.segs button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+
+/* reading */
+.progress{height:6px;background:var(--paper-2);border:1px solid var(--rule-strong);border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;width:35%;background:var(--accent);border-radius:99px;animation:slide 1.4s ease-in-out infinite alternate}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(185%)}}
+.doing{list-style:none;margin:0;padding:0}
+.doing li{display:flex;gap:var(--s3);padding:var(--s3) 0;border-top:1px solid var(--rule);font-size:15px}
+.doing li span:first-child{font-family:var(--mono);color:var(--ink-3)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.progress i{width:60%}}
+
+/* thumbs */
+.thumbs{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
+.thumb{margin:0;border:1px solid var(--rule-strong);background:var(--sheet);border-radius:var(--r1)}
+.thumb svg{display:block;width:100%;height:auto}
+.thumb figcaption{display:flex;justify-content:space-between;align-items:center;padding:0 0 0 var(--s3);font-size:13.5px;font-weight:600}
+.steps-guide{counter-reset:g;list-style:none;margin:0;padding:0}
+.steps-guide li{counter-increment:g;display:grid;grid-template-columns:32px 1fr;padding:var(--s3) 0;border-top:1px solid var(--rule);font-size:15px}
+.steps-guide li::before{content:counter(g);font:700 20px/1 var(--serif);color:var(--accent)}
+.steps-guide small{display:block;color:var(--ink-2);font-size:13.5px}
+
+/* desktop */
+.d-head{display:flex;align-items:center;justify-content:space-between;padding:var(--s3) var(--s6);border-bottom:1px solid var(--rule)}
+.d-steps{display:flex;gap:var(--s6);list-style:none;margin:0;padding:0}
+.d-steps li{font:600 12.5px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);padding:var(--s3) 0;border-bottom:3px solid transparent}
+.d-steps li[aria-current]{color:var(--ink);border-color:var(--accent)}
+.d-grid{display:grid;grid-template-columns:minmax(300px,5fr) minmax(0,7fr);gap:var(--s6);padding:var(--s6)}
+.d-photo{position:sticky;top:var(--s4);align-self:start;display:flex;flex-direction:column;gap:var(--s3)}
+.d-main{display:flex;flex-direction:column;gap:var(--s5)}
+@media (max-width:760px){.d-grid{grid-template-columns:1fr}.d-photo{position:static}}
+.legend{display:grid;gap:var(--s2);margin:0;padding:0;list-style:none;font-size:14px}
+.legend li{display:flex;align-items:center;gap:var(--s3)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-conflict" viewBox="0 0 16 16"><path d="M8 1.2 14.8 8 8 14.8 1.2 8Z" fill="currentColor"/><path d="m5.6 5.6 4.8 4.8m0-4.8-4.8 4.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-possible" viewBox="0 0 16 16"><path d="M8 2 14.6 13.6H1.4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-dasharray="3 1.6"/><path d="M8 6.2v3.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".95" fill="currentColor"/></symbol>
+    <symbol id="i-unknown" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="1.6 2.2" stroke-linecap="round"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.7 1.7c-.6.3-.9.7-.9 1.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".9" fill="currentColor"/></symbol>
+    <symbol id="i-nomatch" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 8h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="m3.5 8.4 3 3 6-6.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="m4 4 8 8m0-8-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.2v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="4.9" r=".95" fill="currentColor"/></symbol>
+    <symbol id="i-cam" viewBox="0 0 20 20"><path d="M2.5 6.5h3l1.4-2h6.2l1.4 2h3v9h-15Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="10" cy="11" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+    <symbol id="i-img" viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m3 14 4.5-4.5 3.5 3.5 2-2 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 20 20"><path d="M3 7V3.5h3.5M13.5 3.5H17V7M17 13v3.5h-3.5M6.5 16.5H3V13M3 10h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 20 20"><rect x="3.5" y="2.5" width="13" height="15" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6.5 7h7M6.5 10h7M6.5 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-lens" viewBox="0 0 32 32"><circle cx="14" cy="14" r="7.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="m19.6 19.6 6 6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M10.5 12.5h7M10.5 15.5h4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="canvas">
+  <h1>LabelLens — Printed Label / Aisle View</h1>
+  <p>Visual contract for the redesign. Phone frames are 360 px wide and show natural height; the bottom action bar is fixed to the viewport on a real device. Label text is taken from the “Sample Masala Biscuits” fixture. Two things are illustrative additions for coverage of states: a smudged ingredient (row 7, producing the Unknown result) and the catalog panel. Nothing here implies a product is safe.</p>
+
+  <div class="boards">
+
+  <!-- 1 PROFILE -->
+  <section class="board" aria-labelledby="b1"><h2 id="b1">1 · Profile</h2>
+  <div class="phone">
+    <header class="app-head"><div class="brand"><svg width="24" height="24" aria-hidden="true"><use href="#i-lens"/></svg>LabelLens</div><button class="btn btn-quiet btn-sm">Start over</button></header>
+    <ol class="steps" aria-label="Steps"><li aria-current="step"><b>1</b> Profile</li><li><b>2</b> Photos</li><li><b>3</b> Results</li></ol>
+    <main class="page">
+      <div><h1 class="h1">What do you avoid?</h1><p class="lede">Saved in this browser only. It is never sent when a label photo is read.</p></div>
+      <fieldset><legend class="caps">Allergens</legend>
+        <div class="opts">
+          <label class="opt"><input type="checkbox" checked><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Milk</label>
+          <label class="opt"><input type="checkbox"><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Egg</label>
+          <label class="opt"><input type="checkbox" checked><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Peanut</label>
+          <label class="opt"><input type="checkbox" checked><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Tree nuts</label>
+          <label class="opt"><input type="checkbox"><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Wheat / gluten</label>
+          <label class="opt"><input type="checkbox"><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Soy</label>
+          <label class="opt"><input type="checkbox"><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Sesame</label>
+          <label class="opt"><input type="checkbox"><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Fish</label>
+          <label class="opt"><input type="checkbox"><span class="box"><svg width="14" height="14"><use href="#i-check"/></svg></span>Shellfish</label>
+        </div></fieldset>
+      <hr class="rule">
+      <div><label class="caps" for="cu" style="display:block;margin-bottom:12px">Other ingredients you avoid</label>
+        <div class="field"><input id="cu" type="text" placeholder="e.g. palm oil"><button class="btn">Add</button></div>
+        <div class="chips"><span class="chip">Palm oil<button aria-label="Remove palm oil"><svg width="14" height="14"><use href="#i-x"/></svg></button></span></div></div>
+      <hr class="rule">
+      <fieldset><legend class="caps">Diet</legend>
+        <div class="opts col1">
+          <label class="opt radio"><input type="radio" name="d"><span class="box"></span><span>No diet preference</span></label>
+          <label class="opt radio"><input type="radio" name="d" checked><span class="box"></span><span>Vegetarian<small>avoid meat and fish</small></span></label>
+          <label class="opt radio"><input type="radio" name="d"><span class="box"></span><span>Vegan<small>avoid all animal-derived foods</small></span></label>
+        </div></fieldset>
+      <button class="btn btn-quiet" style="align-self:flex-start;margin-left:-12px">Clear profile</button>
+    </main>
+    <div class="bar"><button class="btn btn-primary">Continue to photos</button></div>
+    <footer class="foot"><p>LabelLens reads label text. It can’t confirm a product is safe. Check the pack yourself.</p></footer>
+  </div></section>
+
+  <!-- 2 UPLOAD -->
+  <section class="board" aria-labelledby="b2"><h2 id="b2">2 · Upload and capture</h2>
+  <div class="phone">
+    <header class="app-head"><div class="brand"><svg width="24" height="24" aria-hidden="true"><use href="#i-lens"/></svg>LabelLens</div><button class="btn btn-quiet btn-sm">Start over</button></header>
+    <ol class="steps" aria-label="Steps"><li class="done"><b>1</b> Profile</li><li aria-current="step"><b>2</b> Photos</li><li><b>3</b> Results</li></ol>
+    <main class="page">
+      <div><h1 class="h1">Photograph the label</h1>
+        <p class="lede">Checking for: <strong>Milk · Peanut · Tree nuts · palm oil · Vegetarian</strong> <button class="btn btn-quiet btn-sm" style="margin-left:2px">Edit</button></p></div>
+      <div style="display:grid;gap:12px">
+        <button class="btn btn-primary" style="min-height:56px;font-size:17px"><svg width="22" height="22" aria-hidden="true"><use href="#i-cam"/></svg>Take photo</button>
+        <button class="btn"><svg width="20" height="20" aria-hidden="true"><use href="#i-img"/></svg>Choose from gallery</button>
+      </div>
+      <div><p class="caps" style="margin:0 0 4px">Get these in frame</p>
+        <ol class="steps-guide"><li><span>Ingredients list<small>the whole list, edge to edge</small></span></li><li><span>Allergen line<small>“Contains…” and “May contain…”</small></span></li><li><span>Nutrition table<small>optional</small></span></li></ol></div>
+      <div><p class="caps" style="margin:0 0 12px">Added · 2 photos</p>
+        <div class="thumbs">
+          <figure class="thumb"><svg viewBox="0 0 160 110" role="img" aria-label="Photo 1, ingredients panel"><rect width="160" height="110" fill="#d9d2bd"/><rect x="14" y="10" width="132" height="90" fill="#fbf8f0"/><g stroke="#47433a" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M24 26h70M24 38h108M24 50h96M24 62h104M24 74h60"/></g></svg><figcaption>Photo 1<button class="btn btn-quiet btn-sm" aria-label="Remove photo 1"><svg width="14" height="14"><use href="#i-x"/></svg></button></figcaption></figure>
+          <figure class="thumb"><svg viewBox="0 0 160 110" role="img" aria-label="Photo 2, nutrition table"><rect width="160" height="110" fill="#d9d2bd"/><rect x="14" y="10" width="132" height="90" fill="#fbf8f0"/><g stroke="#47433a" stroke-width="2" opacity=".7"><path d="M24 28h112M24 42h112M24 56h112M24 70h112M24 84h112"/></g></svg><figcaption>Photo 2<button class="btn btn-quiet btn-sm" aria-label="Remove photo 2"><svg width="14" height="14"><use href="#i-x"/></svg></button></figcaption></figure>
+        </div></div>
+      <div class="notice err" role="alert"><svg width="18" height="18" aria-hidden="true" style="color:var(--st-conflict)"><use href="#i-info"/></svg><div><p><strong>Couldn’t read the label.</strong></p><p>The reading service has no quota left right now. Your photos are still here. Try again in a moment.</p><p style="margin-top:8px"><button class="btn btn-sm">Try again</button></p></div></div>
+      <p class="small muted" style="margin:0">Only the photos are sent to be read. Your profile stays here.</p>
+    </main>
+    <div class="bar"><button class="btn btn-primary">Read label</button></div>
+  </div></section>
+
+  <!-- 3 READING -->
+  <section class="board" aria-labelledby="b3"><h2 id="b3">3 · Reading</h2>
+  <div class="phone">
+    <header class="app-head"><div class="brand"><svg width="24" height="24" aria-hidden="true"><use href="#i-lens"/></svg>LabelLens</div><button class="btn btn-quiet btn-sm">Start over</button></header>
+    <ol class="steps" aria-label="Steps"><li class="done"><b>1</b> Profile</li><li aria-current="step"><b>2</b> Photos</li><li><b>3</b> Results</li></ol>
+    <main class="page" aria-live="polite" aria-busy="true">
+      <div><p class="caps" style="margin:0 0 8px">Please wait · a few seconds</p><h1 class="h1">Reading the label…</h1>
+        <p class="lede">The wording is copied exactly as printed. Anything that can’t be read is marked as unreadable, not guessed.</p></div>
+      <div class="progress" aria-hidden="true"><i></i></div>
+      <ul class="doing"><li><span>01</span>Copying the printed wording</li><li><span>02</span>Marking what can’t be read</li><li style="border-bottom:1px solid var(--rule)"><span>03</span>Then your profile is compared here, in this browser</li></ul>
+    </main>
+    <footer class="foot"><p>LabelLens reads label text. It can’t confirm a product is safe. Check the pack yourself.</p></footer>
+  </div></section>
+
+  <!-- 4 RESULTS -->
+  <section class="board" aria-labelledby="b4"><h2 id="b4">4 · Results (conflict, possible, unknown, no match)</h2>
+  <div class="phone">
+    <header class="app-head"><div class="brand"><svg width="24" height="24" aria-hidden="true"><use href="#i-lens"/></svg>LabelLens</div><button class="btn btn-quiet btn-sm">Start over</button></header>
+    <ol class="steps" aria-label="Steps"><li class="done"><b>1</b> Profile</li><li class="done"><b>2</b> Photos</li><li aria-current="step"><b>3</b> Results</li></ol>
+    <main class="page">
+      <div class="product"><span class="caps">Label read</span><span class="name">Sample Masala Biscuits</span><span class="muted">Sample Foods · 120 g</span></div>
+      <div>
+        <div class="tally" role="group" aria-label="Result summary">
+          <div class="c"><span class="n">2</span><span class="l"><svg width="12" height="12" aria-hidden="true"><use href="#i-conflict"/></svg>Conflict</span></div>
+          <div class="p"><span class="n">1</span><span class="l"><svg width="12" height="12" aria-hidden="true"><use href="#i-possible"/></svg>Possible</span></div>
+          <div class="u"><span class="n">1</span><span class="l"><svg width="12" height="12" aria-hidden="true"><use href="#i-unknown"/></svg>Unknown</span></div>
+          <div class="m"><span class="n">1</span><span class="l"><svg width="12" height="12" aria-hidden="true"><use href="#i-nomatch"/></svg>No match</span></div>
+        </div>
+        <p class="basis">Based only on label text that could be read. This is not a safety check.</p>
+      </div>
+
+      <div>
+      <article class="entry e-conflict" aria-labelledby="r1">
+        <div class="entry-head"><h3 id="r1">Peanut</h3><span class="badge s-conflict"><svg width="14" height="14" aria-hidden="true"><use href="#i-conflict"/></svg>Conflict</span></div>
+        <p class="reason">Label text matches your restriction: “Groundnut Oil” is a reviewed alias for peanut.</p>
+        <figure class="quote"><div class="qh"><span class="caps">Photographed wording</span><span class="src photo">From your photo · Photo 1</span></div>
+          <blockquote>Refined Wheat Flour (Maida), Sugar, <mark>Groundnut Oil</mark>, Milk Solids…</blockquote>
+          <div class="read"><span>Read as</span><b>groundnut oil</b><span>→ peanut (alias)</span><span>· Ingredients</span></div></figure>
+        <button class="btn btn-quiet btn-sm" style="align-self:flex-start;margin-left:-12px"><svg width="16" height="16" aria-hidden="true"><use href="#i-photo"/></svg>Show Photo 1</button>
+      </article>
+
+      <article class="entry e-conflict" aria-labelledby="r2">
+        <div class="entry-head"><h3 id="r2">Milk</h3><span class="badge s-conflict"><svg width="14" height="14" aria-hidden="true"><use href="#i-conflict"/></svg>Conflict</span></div>
+        <p class="reason">Label text matches your restriction: milk appears in the ingredients and in the contains line.</p>
+        <figure class="quote"><div class="qh"><span class="caps">Photographed wording</span><span class="src photo">From your photo · Photo 1</span></div>
+          <blockquote>…Groundnut Oil, <mark>Milk</mark> Solids, Emulsifier (Soy Lecithin)…</blockquote>
+          <div class="read"><span>Read as</span><b>milk</b><span>· exact · Ingredients</span></div></figure>
+        <figure class="quote"><div class="qh"><span class="caps">Photographed wording</span><span class="src photo">From your photo · Photo 1</span></div>
+          <blockquote>Contains: Wheat, <mark>Milk</mark>, Soy</blockquote>
+          <div class="read"><span>Read as</span><b>milk</b><span>· exact · Allergen line</span></div></figure>
+      </article>
+
+      <article class="entry e-possible" aria-labelledby="r3">
+        <div class="entry-head"><h3 id="r3">Tree nuts</h3><span class="badge s-possible"><svg width="14" height="14" aria-hidden="true"><use href="#i-possible"/></svg>Possible conflict</span></div>
+        <p class="reason">Needs your review: a may-contain line mentions tree nuts.</p>
+        <figure class="quote"><div class="qh"><span class="caps">Photographed wording</span><span class="src photo">From your photo · Photo 1</span></div>
+          <blockquote>May contain traces of <mark>tree nuts</mark></blockquote>
+          <div class="read"><span>Read as</span><b>tree nuts</b><span>· may-contain line</span></div></figure>
+      </article>
+
+      <article class="entry e-unknown" aria-labelledby="r4">
+        <div class="entry-head"><h3 id="r4">Palm oil</h3><span class="badge s-unknown"><svg width="14" height="14" aria-hidden="true"><use href="#i-unknown"/></svg>Unknown</span></div>
+        <p class="reason">One ingredient could not be read, so palm oil can’t be ruled in or out. “Not detected” does not mean absent.</p>
+        <figure class="quote"><div class="qh"><span class="caps">Photographed wording</span><span class="src review">Needs review · Photo 1</span></div>
+          <blockquote>Edible Veg▒▒▒▒▒ Oil</blockquote>
+          <div class="read"><span>Read as</span><b>unreadable</b><span>· ingredient 7</span></div></figure>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:-12px"><button class="btn btn-quiet btn-sm">Retake ingredients photo</button><button class="btn btn-quiet btn-sm">Type what it says</button></div>
+      </article>
+
+      <article class="entry e-nomatch" aria-labelledby="r5">
+        <div class="entry-head"><h3 id="r5" style="font-size:18px">Vegetarian diet</h3><span class="badge s-nomatch"><svg width="14" height="14" aria-hidden="true"><use href="#i-nomatch"/></svg>No match found</span></div>
+        <p class="reason muted small" style="margin:0">No match found in readable label text. This is not a safety check.</p>
+      </article>
+      </div>
+
+      <section aria-labelledby="cov"><div class="sect-title"><h2 class="h2" id="cov">What could be read</h2></div>
+        <dl class="kv">
+          <dt>Ingredients</dt><dd><span class="state"><svg width="14" height="14" aria-hidden="true"><use href="#i-nomatch"/></svg>Partly readable · 1 line unclear</span></dd>
+          <dt>Allergen line</dt><dd><span class="state"><svg width="14" height="14" aria-hidden="true"><use href="#i-nomatch"/></svg>Readable</span></dd>
+          <dt>Nutrition</dt><dd><span class="state"><svg width="14" height="14" aria-hidden="true"><use href="#i-nomatch"/></svg>Readable</span></dd>
+          <dt>You confirmed</dt><dd>Whole list visible in photo</dd>
+        </dl></section>
+
+      <section class="catalog-box" aria-labelledby="cat"><span class="src catalog">From catalog — not your photo</span>
+        <h2 class="h2" id="cat" style="margin-top:12px;font-size:17px">Listed online as</h2>
+        <p class="small">Net quantity 125 g · 8 pieces</p>
+        <p class="small muted">Catalog entries can be out of date and are never used to decide your results. Your photo says 120 g.</p></section>
+    </main>
+    <div class="bar"><button class="btn" style="flex:none"><svg width="18" height="18" aria-hidden="true"><use href="#i-photo"/></svg>Photos</button><button class="btn btn-primary"><svg width="20" height="20" aria-hidden="true"><use href="#i-scan"/></svg>Scan next</button></div>
+    <footer class="foot"><p>LabelLens reads label text. It can’t confirm a product is safe. Check the pack yourself.</p></footer>
+  </div></section>
+
+  <!-- 5 LEDGER -->
+  <section class="board" aria-labelledby="b5"><h2 id="b5">5 · Ingredient, allergen and nutrition ledgers</h2>
+  <div class="phone">
+    <header class="app-head"><div class="brand"><svg width="24" height="24" aria-hidden="true"><use href="#i-lens"/></svg>LabelLens</div><button class="btn btn-quiet btn-sm">Start over</button></header>
+    <main class="page">
+      <section aria-labelledby="l1"><div class="sect-title"><h2 class="h2" id="l1">Ingredients</h2><span class="caps">7 lines</span></div>
+        <p class="small muted" style="margin:0 0 8px">Printed wording on the left of each line, how it was read below it. Fix anything that was misread.</p>
+        <table class="ledger"><caption class="visually-hidden" style="position:absolute;left:-9999px">Ingredients as printed and as read</caption>
+          <thead><tr><th scope="col">#</th><th scope="col">As printed</th></tr></thead>
+          <tbody>
+            <tr><td class="n">1</td><td><span class="w">Refined Wheat Flour (Maida)</span><span class="as">Read as <b>wheat flour</b></span></td></tr>
+            <tr><td class="n">2</td><td><span class="w">Sugar</span><span class="as">Read as <b>sugar</b></span></td></tr>
+            <tr class="hit"><td class="n">3</td><td><span class="w">Groundnut Oil</span><span class="as">Read as <b>groundnut oil</b> → possible peanut (suggestion, unverified)</span>
+              <span class="flag"><span class="badge s-conflict" style="min-height:24px;font-size:11px"><svg width="12" height="12" aria-hidden="true"><use href="#i-conflict"/></svg>Conflict</span></span></td></tr>
+            <tr><td class="n">4</td><td><span class="w">Milk Solids</span><span class="as">Read as <b>milk solids</b></span></td></tr>
+            <tr><td class="n">5</td><td><span class="w">Emulsifier (Soy Lecithin)</span><span class="as">Read as <b>soy lecithin</b></span></td></tr>
+            <tr><td class="n">6</td><td><span class="w">Salt</span><span class="as">Read as <b>salt</b></span><br><span class="src edited flag">Edited by you</span></td></tr>
+            <tr><td class="n">7</td><td><span class="w">Edible Veg▒▒▒▒▒ Oil</span><span class="as">Read as <b>unreadable</b></span><br><span class="src review flag">Needs review</span><button class="btn btn-quiet btn-sm" style="margin-top:4px;margin-left:-8px">Correct this line</button></td></tr>
+          </tbody></table></section>
+
+      <section aria-labelledby="l2"><div class="sect-title"><h2 class="h2" id="l2">Allergen statements</h2></div>
+        <table class="ledger"><thead><tr><th scope="col">Type</th><th scope="col">As printed</th></tr></thead><tbody>
+          <tr><td style="width:96px"><span class="caps">Contains</span></td><td><span class="w">Contains: Wheat, Milk, Soy</span></td></tr>
+          <tr><td><span class="caps">May contain</span></td><td><span class="w">May contain traces of tree nuts</span></td></tr></tbody></table></section>
+
+      <section aria-labelledby="l3"><div class="sect-title"><h2 class="h2" id="l3">Nutrition</h2><span class="caps">per 100 g</span></div>
+        <div class="tbl-wrap"><table class="ledger"><thead><tr><th scope="col">Nutrient</th><th scope="col" class="num">Per 100 g</th><th scope="col" class="num">Per 30 g</th></tr></thead><tbody>
+          <tr><td>Energy</td><td class="num">450 kcal</td><td class="num">54 kcal</td></tr>
+          <tr><td>Protein</td><td class="num">6 g</td><td class="num">—</td></tr>
+          <tr><td>Total fat</td><td class="num">18 g</td><td class="num">—</td></tr>
+          <tr><td>Carbohydrate</td><td class="num">66 g</td><td class="num">—</td></tr>
+          <tr><td>Total sugars</td><td class="num">22 g</td><td class="num">—</td></tr>
+          <tr><td>Sodium</td><td class="num">420 mg</td><td class="num">—</td></tr></tbody></table></div>
+        <p class="small muted" style="margin:8px 0 0">A dash means the label shows no value here, not zero.</p></section>
+
+      <section aria-labelledby="l4"><div class="sect-title"><h2 class="h2" id="l4">Package facts</h2></div>
+        <dl class="kv"><dt>Best before</dt><dd><span class="w" style="font-family:var(--mono)">BEST BEFORE 09 NOV 2026</span></dd><dt>Batch</dt><dd><span style="font-family:var(--mono)">LOT L2610A</span></dd><dt>Veg mark</dt><dd>green dot in square, seen on pack</dd></dl></section>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn">Export this scan</button><button class="btn btn-quiet">Print</button></div>
+    </main>
+  </div></section>
+
+  <!-- 6 PHOTO -->
+  <section class="board" aria-labelledby="b6"><h2 id="b6">6 · Photo view</h2>
+  <div class="phone">
+    <header class="app-head"><div class="brand"><svg width="24" height="24" aria-hidden="true"><use href="#i-lens"/></svg>LabelLens</div><button class="btn btn-quiet btn-sm">Back to results</button></header>
+    <main class="page">
+      <div><h1 class="h1" style="font-size:24px">Your photos</h1><p class="lede">Compare the printed label with what was read. Wording is not marked on the photo.</p></div>
+      <div class="segs" role="group" aria-label="Choose photo"><button aria-pressed="true">Photo 1</button><button aria-pressed="false">Photo 2</button></div>
+      <figure class="shot"><svg viewBox="0 0 320 400" role="img" aria-label="Photo 1: ingredients panel of Sample Masala Biscuits"><rect width="320" height="400" fill="#d9d2bd"/><rect x="24" y="20" width="272" height="360" fill="#fbf8f0" stroke="#a39a80"/><g font-family="Courier New,monospace" fill="#2a271f" font-size="13"><text x="40" y="58" font-weight="bold">INGREDIENTS</text><text x="40" y="84">Refined Wheat Flour (Maida),</text><text x="40" y="104">Sugar, Groundnut Oil, Milk</text><text x="40" y="124">Solids, Emulsifier (Soy</text><text x="40" y="144">Lecithin), Salt, Edible Veg</text><text x="40" y="190" font-weight="bold">Contains: Wheat, Milk, Soy.</text><text x="40" y="210">May contain traces of tree nuts.</text><text x="40" y="260">Net quantity 120 g</text><text x="40" y="280">BEST BEFORE 09 NOV 2026</text><text x="40" y="300">LOT L2610A</text></g></svg>
+        <figcaption><span class="small"><strong>Photo 1</strong> · ingredients</span><span><button class="btn btn-quiet btn-sm">Retake</button><button class="btn btn-quiet btn-sm">Remove</button></span></figcaption></figure>
+      <dl class="kv"><dt>Reading</dt><dd>Automated estimate: good<br><span class="small muted">Back panel: ingredients and allergen line. Not a measured accuracy.</span></dd></dl>
+    </main>
+    <div class="bar"><button class="btn" style="flex:none">Results</button><button class="btn btn-primary"><svg width="20" height="20" aria-hidden="true"><use href="#i-scan"/></svg>Scan next</button></div>
+  </div></section>
+
+  <!-- DESKTOP -->
+  <section class="board wide" aria-labelledby="b7"><h2 id="b7">7 · Desktop results (two columns, photo stays beside the evidence)</h2>
+  <div class="desk">
+    <header class="d-head"><div class="brand"><svg width="26" height="26" aria-hidden="true"><use href="#i-lens"/></svg>LabelLens</div>
+      <ol class="d-steps" aria-label="Steps"><li>1 Profile</li><li>2 Photos</li><li aria-current="step">3 Results</li></ol>
+      <div style="display:flex;gap:8px"><button class="btn btn-quiet">Start over</button><button class="btn btn-primary"><svg width="18" height="18" aria-hidden="true"><use href="#i-scan"/></svg>Scan next</button></div></header>
+    <div class="d-grid">
+      <aside class="d-photo" aria-label="Label photo">
+        <div class="segs" role="group" aria-label="Choose photo"><button aria-pressed="true">Photo 1</button><button aria-pressed="false">Photo 2</button></div>
+        <figure class="shot"><svg viewBox="0 0 320 400" role="img" aria-label="Photo 1: ingredients panel"><rect width="320" height="400" fill="#d9d2bd"/><rect x="24" y="20" width="272" height="360" fill="#fbf8f0" stroke="#a39a80"/><g font-family="Courier New,monospace" fill="#2a271f" font-size="13"><text x="40" y="58" font-weight="bold">INGREDIENTS</text><text x="40" y="84">Refined Wheat Flour (Maida),</text><text x="40" y="104">Sugar, Groundnut Oil, Milk</text><text x="40" y="124">Solids, Emulsifier (Soy</text><text x="40" y="144">Lecithin), Salt, Edible Veg</text><text x="40" y="190" font-weight="bold">Contains: Wheat, Milk, Soy.</text><text x="40" y="210">May contain traces of tree nuts.</text></g></svg><figcaption><span class="small"><strong>Photo 1</strong> · ingredients</span><button class="btn btn-quiet btn-sm">Retake</button></figcaption></figure>
+      </aside>
+      <div class="d-main">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:end">
+          <div class="product"><span class="caps">Label read</span><span class="name">Sample Masala Biscuits</span><span class="muted">Sample Foods · 120 g</span></div>
+          <div><div class="tally"><div class="c"><span class="n">2</span><span class="l"><svg width="12" height="12" aria-hidden="true"><use href="#i-conflict"/></svg>Conflict</span></div><div class="p"><span class="n">1</span><span class="l"><svg width="12" height="12" aria-hidden="true"><use href="#i-possible"/></svg>Possible</span></div><div class="u"><span class="n">1</span><span class="l"><svg width="12" height="12" aria-hidden="true"><use href="#i-unknown"/></svg>Unknown</span></div><div class="m"><span class="n">1</span><span class="l"><svg width="12" height="12" aria-hidden="true"><use href="#i-nomatch"/></svg>No match</span></div></div></div>
+        </div>
+        <p class="basis" style="margin:-8px 0 0">Based only on label text that could be read. This is not a safety check.</p>
+        <article class="entry e-conflict"><div class="entry-head"><h3>Peanut</h3><span class="badge s-conflict"><svg width="14" height="14" aria-hidden="true"><use href="#i-conflict"/></svg>Conflict</span></div>
+          <p class="reason">Label text matches your restriction: “Groundnut Oil” is a reviewed alias for peanut.</p>
+          <figure class="quote"><div class="qh"><span class="caps">Photographed wording</span><span class="src photo">From your photo · Photo 1</span></div><blockquote>Refined Wheat Flour (Maida), Sugar, <mark>Groundnut Oil</mark>, Milk Solids…</blockquote><div class="read"><span>Read as</span><b>groundnut oil</b><span>→ peanut (alias) · Ingredients</span></div></figure></article>
+        <article class="entry e-possible"><div class="entry-head"><h3>Tree nuts</h3><span class="badge s-possible"><svg width="14" height="14" aria-hidden="true"><use href="#i-possible"/></svg>Possible conflict</span></div>
+          <p class="reason">Needs your review: a may-contain line mentions tree nuts.</p>
+          <figure class="quote"><div class="qh"><span class="caps">Photographed wording</span><span class="src photo">From your photo · Photo 1</span></div><blockquote>May contain traces of <mark>tree nuts</mark></blockquote></figure></article>
+        <p class="small muted">Milk, Palm oil and Vegetarian entries continue below, same pattern.</p>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- TOKENS -->
+  <section class="board wide" aria-labelledby="b8"><h2 id="b8">8 · Status key (shape + text + border, never colour alone)</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;background:var(--paper);border:1px solid var(--rule-strong);border-radius:14px;padding:24px">
+      <span class="badge s-conflict"><svg width="14" height="14" aria-hidden="true"><use href="#i-conflict"/></svg>Conflict</span>
+      <span class="badge s-possible"><svg width="14" height="14" aria-hidden="true"><use href="#i-possible"/></svg>Possible conflict</span>
+      <span class="badge s-unknown"><svg width="14" height="14" aria-hidden="true"><use href="#i-unknown"/></svg>Unknown</span>
+      <span class="badge s-nomatch"><svg width="14" height="14" aria-hidden="true"><use href="#i-nomatch"/></svg>No match found</span>
+      <span class="src photo">From your photo</span><span class="src edited">Edited by you</span><span class="src review">Needs review</span><span class="src catalog">From catalog — not your photo</span>
+    </div></section>
+  </div>
+</div>
+</body>
+</html>

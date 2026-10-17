@@ -9,18 +9,19 @@ export function ProfilePage({ onContinue }: { onContinue: () => void }) {
 
   return (
     <div className="page page-profile">
-      <section className="card hero-card">
+      <section className="profile-intro">
         <h1>Your dietary profile</h1>
-        <p className="muted">
+        <p className="lede">
           Tell LabelLens what to watch out for. It stays in this browser and is
-          never sent anywhere — not to our service, not to any vision provider.
+          never sent anywhere, not to our service and not to any vision
+          provider.
         </p>
         <p className="chip chip-accent profile-summary-chip">
           {profileSummary(profile)}
         </p>
       </section>
 
-      <section className="card">
+      <section className="profile-sheet" aria-label="Profile settings">
         <ProfileForm onSaved={onContinue} />
       </section>
 

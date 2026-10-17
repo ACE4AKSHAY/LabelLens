@@ -81,7 +81,7 @@ export function NutritionTable({
                       onClick={() => onFocusPhoto(row.image_index)}
                     >
                       <ZoomIcon size={15} />
-                      Show on photo
+                      Open photo
                     </button>
                   )}
                 </td>
