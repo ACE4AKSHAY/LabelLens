@@ -24,8 +24,7 @@ See the [full sanitized scan summary](docs/demo/scan-result-summary.md) for the 
 
 ### Screen recordings
 
-- [Recording 1 — 07:03](docs/demo/recordings/Recording%202026-10-17%20070327.mp4) (49 seconds)
-- [Recording 2 — 07:07](docs/demo/recordings/Recording%202026-10-17%20070721.mp4) (56 seconds)
+The two screen recordings are available in the [LabelLens demo recordings folder on Google Drive](https://drive.google.com/drive/folders/11tJswL4NJnAskwMH4VVf0o9nWkEmd1_l?usp=drive_link).
 
 ## Features
 
