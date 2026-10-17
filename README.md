@@ -109,4 +109,11 @@ Fixture checks verify application rules and schema handling; they do not establi
 
 ## AI and development disclosure
 
-LabelLens uses a configured third-party vision/LLM provider for live extraction. The project also used AI-assisted coding and development tools. Live mode is opt-in; consult the provider's current terms before sending label photos.
+OpenAI Codex and Google Antigravity were used for development assistance, including implementation and fixture/report work. Anthropic Claude was used for UI ideation. Live extraction is an optional backend-only integration with the Google Gemini API; limited local requests are documented in [the API contract](docs/API_CONTRACT.md) and are not an OCR accuracy benchmark. An optional GLM adapter is present but was not relied on for verified live results. Label photos are sent to the configured provider only in live mode; dietary profiles stay in the browser. Live mode is opt-in, and provider suitability for a public shopper-facing deployment remains unresolved.
+
+## Future improvements
+
+- Evaluate transcription and uncertainty handling against consented, human-annotated real-label photos across packaging, languages, and image conditions.
+- Calibrate image-quality estimates and improve recovery for curved, small, blurry, and partially obscured text.
+- Complete provider policy and operational review before enabling public live scans; add monitoring for latency, quotas, and provider outages.
+- Deploy and smoke-test the app, then verify that the demo recordings are accessible to reviewers.
