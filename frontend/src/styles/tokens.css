@@ -1,44 +1,33 @@
-/* LabelLens design tokens: "Printed Label" + "Aisle View".
-   Warm paper, dark ink, ONE restrained accent (indigo). The accent is used for
-   primary actions, links, focus and the current step only. It is never a status
-   colour and never implies safety. There is no green anywhere in this file.
-   Status is always text + shape/icon + colour, never colour alone.
-   Names match docs/design/preview.html and shared status components. */
-
+/* LabelLens theme tokens. Status colors always appear with clear text/shape. */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
-  /* Paper */
-  --paper: #f5f0e4; /* page */
-  --paper-2: #ece5d3; /* wells, hover */
-  --sheet: #fbf8f0; /* raised surface */
-  --rule: #d6ccb4; /* hairlines */
-  --rule-strong: #a39a80; /* control borders (>=3:1 on paper) */
+  --paper: #f5f7fb;
+  --paper-2: #edf1f7;
+  --sheet: #ffffff;
+  --rule: #dce3ed;
+  --rule-strong: #9ba9ba;
 
-  /* Ink */
-  --ink: #1c1a16;
-  --ink-2: #47433a;
-  --ink-3: #645f50; /* AA on paper: minimum for body text */
+  --ink: #17212f;
+  --ink-2: #465467;
+  --ink-3: #5b6878;
 
-  /* Accent: indigo */
-  --accent: #34379a;
-  --accent-hover: #272a7e;
-  --accent-soft: #e3e2f2;
+  --accent: #315fbd;
+  --accent-hover: #264b99;
+  --accent-soft: #e9effd;
   --on-accent: #ffffff;
-  --focus: #34379a;
-  --field: #ffffff; /* text input and checkbox fill */
+  --focus: #315fbd;
+  --field: #ffffff;
 
-  /* Status: text colour + soft background. Shapes differ per state. */
-  --st-conflict: #a52a16;
-  --st-conflict-bg: #f6e0da;
-  --st-possible: #7a4e00;
-  --st-possible-bg: #f6e8c8;
-  --st-unknown: #3d4858;
-  --st-unknown-bg: #e4e7ec;
-  --st-nomatch: #55564e;
-  --st-nomatch-bg: #ece8dc;
+  --st-conflict: #a12a23;
+  --st-conflict-bg: #fce9e7;
+  --st-possible: #795200;
+  --st-possible-bg: #fff3d6;
+  --st-unknown: #42536a;
+  --st-unknown-bg: #eaf0f6;
+  --st-nomatch: #525e6a;
+  --st-nomatch-bg: #eef1f4;
 
-  /* Space */
   --s1: 4px;
   --s2: 8px;
   --s3: 12px;
@@ -47,64 +36,88 @@
   --s6: 32px;
   --s7: 48px;
 
-  /* Radius */
-  --r1: 3px; /* quotes, chips, badges */
-  --r2: 8px; /* controls */
-  --r3: 14px; /* sheets */
-  --shadow-pop: 0 8px 24px rgba(28, 26, 22, 0.18);
+  --r1: 6px;
+  --r2: 10px;
+  --r3: 14px;
+  --shadow-pop: 0 10px 28px rgba(23, 33, 47, 0.12);
 
-  /* Type: system stacks only, no external requests */
-  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-    Georgia, serif;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
-  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
-    "Courier New", monospace;
+  --serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Courier New", monospace;
 
-  /* Type scale (rem so text enlargement and 200% zoom work) */
-  --fs-label: 0.8125rem; /* 13 small-caps labels */
-  --fs-meta: 0.875rem; /* 14 */
-  --fs-body: 0.9375rem; /* 15 body / UI */
-  --fs-section: 1.0625rem; /* 17 */
-  --fs-card: 1.125rem; /* 18 */
-  --fs-page: 1.5rem; /* 24 page title, serif */
-  --track-label: 0.06em;
-
-  /* Touch */
+  --fs-label: 0.8125rem;
+  --fs-meta: 0.875rem;
+  --fs-body: 0.9375rem;
+  --fs-section: 1.0625rem;
+  --fs-card: 1.125rem;
+  --fs-page: 1.5rem;
+  --track-label: 0.04em;
   --tap: 44px;
-
-  /* Motion */
   --t-fast: 120ms;
 }
 
-/* Dark mode: same tokens remapped. Paper-and-ink inverted, accent lightened. */
-@media (prefers-color-scheme: dark) {
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #111827;
+  --paper-2: #182334;
+  --sheet: #1d2a3b;
+  --rule: #34445a;
+  --rule-strong: #73839a;
+
+  --ink: #f4f7fb;
+  --ink-2: #c4cedb;
+  --ink-3: #aebacc;
+
+  --accent: #a8c2ff;
+  --accent-hover: #c2d3ff;
+  --accent-soft: #273a5f;
+  --on-accent: #12213f;
+  --focus: #b7ccff;
+  --field: #152132;
+
+  --st-conflict: #ffaaa3;
+  --st-conflict-bg: #482a2b;
+  --st-possible: #f4cd78;
+  --st-possible-bg: #40351e;
+  --st-unknown: #c4d2e5;
+  --st-unknown-bg: #2a394d;
+  --st-nomatch: #c8d0d9;
+  --st-nomatch-bg: #2b3644;
+
+  --shadow-pop: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-large-text="true"] {
+  font-size: 112.5%;
+}
+
+@media (prefers-contrast: more) {
   :root {
-    --paper: #17150f;
-    --paper-2: #0f0e0a;
-    --sheet: #211e17;
-    --rule: #3a3528;
-    --rule-strong: #7a7360;
+    --ink-2: #303b4a;
+    --ink-3: #3f4d5d;
+    --rule: #9ba9ba;
+    --rule-strong: #526276;
+  }
 
-    --ink: #f1ece0;
-    --ink-2: #cbc4b2;
-    --ink-3: #a8a18d;
+  :root[data-theme="dark"] {
+    --ink-2: #e0e7f0;
+    --ink-3: #d1dbe8;
+    --rule: #718198;
+    --rule-strong: #a9b8ca;
+  }
+}
 
-    --accent: #b3b5f2;
-    --accent-hover: #cbcdf8;
-    --accent-soft: #26274f;
-    --on-accent: #14153f;
-    --focus: #b3b5f2;
-    --field: #14120d;
-    --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.4);
+@media (forced-colors: active) {
+  .btn-primary {
+    color: ButtonText;
+    background: ButtonFace;
+    border-color: ButtonText;
+  }
 
-    --st-conflict: #ff9f8a;
-    --st-conflict-bg: #3f1e18;
-    --st-possible: #f1c46e;
-    --st-possible-bg: #3a2c0d;
-    --st-unknown: #b8c3d4;
-    --st-unknown-bg: #262c36;
-    --st-nomatch: #bcbcb0;
-    --st-nomatch-bg: #2b2a24;
+  .status-badge,
+  .chip,
+  .note {
+    border: 1px solid currentColor;
   }
 }

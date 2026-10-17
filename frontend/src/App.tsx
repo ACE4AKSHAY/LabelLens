@@ -13,7 +13,9 @@ import { ScanPage } from "@pages/ScanPage";
 import { extractMode } from "@api/extract";
 import type { ExtractOutcome } from "@api/extract";
 import { DEFAULT_MOCK_PACK_ID, getPackById, type FixturePack } from "@api/mocks";
-import { FlaskIcon } from "@components/icons";
+import { FlaskIcon, MoonIcon } from "@components/icons";
+
+type Theme = "light" | "dark";
 
 function isDevSession(): boolean {
   try {
@@ -28,6 +30,10 @@ interface AppProps {
   simulateError: boolean;
   onPickFixture: (pack: FixturePack) => void;
   onToggleSimulateError: () => void;
+  theme: Theme;
+  onToggleTheme: () => void;
+  largeText: boolean;
+  onToggleLargeText: () => void;
 }
 
 function AppBody({
@@ -35,6 +41,10 @@ function AppBody({
   simulateError,
   onPickFixture,
   onToggleSimulateError,
+  theme,
+  onToggleTheme,
+  largeText,
+  onToggleLargeText,
 }: AppProps) {
   const { scan, clearScan, loadFixtureDirect } = useScan();
   const [step, setStep] = useState<Step>("profile");
@@ -76,6 +86,15 @@ function AppBody({
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
+      <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+        {scan.phase === "reading"
+          ? "Reading label photos. Please wait."
+          : scan.phase === "results"
+            ? `Label scan complete. ${scan.results?.items.length ?? 0} dietary comparison results are ready.`
+            : scan.photos.length > 0
+              ? `${scan.photos.length} label ${scan.photos.length === 1 ? "photo is" : "photos are"} ready to scan.`
+              : ""}
+      </p>
       <header className="app-header">
         <div className="app-header-inner">
           <div className="brand">
@@ -88,6 +107,28 @@ function AppBody({
             <span className="brand-name">LabelLens</span>
           </div>
           <div className="header-actions">
+            <button
+              type="button"
+              className="btn btn-quiet btn-sm theme-toggle"
+              onClick={onToggleTheme}
+              aria-pressed={theme === "dark"}
+              aria-label="Dark mode"
+              title={theme === "dark" ? "Turn off dark mode" : "Turn on dark mode"}
+            >
+              <MoonIcon size={16} />
+              <span>Dark mode</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-quiet btn-sm text-size-toggle"
+              onClick={onToggleLargeText}
+              aria-pressed={largeText}
+              aria-label="Larger text"
+              title={largeText ? "Use standard text size" : "Use larger text"}
+            >
+              <span aria-hidden="true">A+</span>
+              <span className="text-size-label">Larger text</span>
+            </button>
             {isDevSession() && (
               <button
                 type="button"
@@ -202,6 +243,46 @@ export default function App() {
   const isMock = extractMode() === "mock";
   const [activePack, setActivePack] = useState<FixturePack | null>(null);
   const [simulateError, setSimulateError] = useState(false);
+  const [theme, setTheme] = useState<Theme>(() => {
+    let initial: Theme = "light";
+    try {
+      if (window.localStorage.getItem("labellens-theme") === "dark") {
+        initial = "dark";
+      }
+    } catch {
+      // Keep the default light theme when storage is unavailable.
+    }
+    document.documentElement.dataset.theme = initial;
+    return initial;
+  });
+  const [largeText, setLargeText] = useState(() => {
+    let enabled = false;
+    try {
+      enabled = window.localStorage.getItem("labellens-large-text") === "true";
+    } catch {
+      // Keep standard text when storage is unavailable.
+    }
+    document.documentElement.dataset.largeText = String(enabled);
+    return enabled;
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      window.localStorage.setItem("labellens-theme", theme);
+    } catch {
+      // The theme still works for this session if storage is unavailable.
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.largeText = String(largeText);
+    try {
+      window.localStorage.setItem("labellens-large-text", String(largeText));
+    } catch {
+      // The preference still works for this session if storage is unavailable.
+    }
+  }, [largeText]);
 
   // Mock-mode scan loader: the dev picker chooses what a scan returns.
   const loadOutcome = useMemo(() => {
@@ -231,6 +312,10 @@ export default function App() {
             setSimulateError(false);
           }}
           onToggleSimulateError={() => setSimulateError((v) => !v)}
+          theme={theme}
+          onToggleTheme={() => setTheme((currentTheme) => currentTheme === "dark" ? "light" : "dark")}
+          largeText={largeText}
+          onToggleLargeText={() => setLargeText((current) => !current)}
         />
       </ScanProvider>
     </ProfileProvider>
