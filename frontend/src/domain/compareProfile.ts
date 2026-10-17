@@ -33,6 +33,8 @@ export type { AliasMap } from "../../../shared/contracts";
  *  R7  no hits and R6 not satisfied -> unknown, naming what is missing
  *  R8  conflict > possible_conflict > unknown > no_match_found; every hit is listed
  *      as evidence; a hit always wins over missing coverage
+ *  R9  disagreements between interpreted fields and their source wording remain
+ *      possible_conflict until reviewed against the photo
  */
 
 const NO_MATCH_REASON = "No match found in readable label text. This is not a safety check.";
@@ -67,6 +69,7 @@ interface TextSource {
   bucket: "ingredient" | "contains" | "precautionary";
   kind: EvidenceItem["kind"];
   row: IngredientRow | null;
+  statement_mismatch: string | null;
 }
 
 interface Hit {
@@ -76,6 +79,7 @@ interface Hit {
   rank: number;
   order: number;
   flavor: "clear" | "review" | "disagreement" | "precautionary" | "unreviewed";
+  explanation?: string;
 }
 
 /** Normalization for matching only: lowercase, non-alphanumerics become spaces, whole tokens. */
@@ -116,6 +120,25 @@ function bestEntryForTokens(tokens: string[], entries: AliasMapEntry[]): AliasMa
     if (best === null || ENTRY_KIND_RANK[entry.kind] > ENTRY_KIND_RANK[best.kind]) best = entry;
   }
   return best;
+}
+
+function bestCertainEntryForText(text: string, entries: AliasMapEntry[]): AliasMapEntry | null {
+  const tokens = normalizeTokens(text);
+  const matches = entries.filter((entry) =>
+    (entry.kind === "exact" || (entry.kind === "alias" && entry.reviewed)) &&
+    phraseOccurs(tokens, normalizeTokens(entry.term)));
+  const groups = new Set(matches.map((entry) => entry.group));
+  if (groups.size !== 1) return null;
+  return matches.sort((a, b) => ENTRY_KIND_RANK[b.kind] - ENTRY_KIND_RANK[a.kind])[0] ?? null;
+}
+
+function statementBucketMismatch(bucket: "contains" | "precautionary", quote: string): string | null {
+  const text = quote.toLowerCase();
+  const precautionary = /\bmay\s+contain\b|\bmight\s+contain\b|\bmay\s+be\s+present\b|\btraces?\s+of\b|\bshared\s+(?:equipment|facility)\b|\bfacility\s+that\s+also\b|\bhandles?\s+\w+/i.test(text);
+  const direct = /\bcontains?\b/i.test(text) && !precautionary;
+  if (bucket === "contains" && precautionary) return "The reader classified this as a direct contains statement, but its quoted wording is precautionary.";
+  if (bucket === "precautionary" && direct) return "The reader classified this as precautionary, but its quoted wording says the allergen is contained.";
+  return null;
 }
 
 function bestDietTermForTokens(tokens: string[], terms: DietTerm[]): DietTerm | null {
@@ -170,6 +193,7 @@ function collectTextSources(extraction: Extraction): TextSource[] {
       bucket: "ingredient",
       kind: "ingredient",
       row,
+      statement_mismatch: null,
     });
   }
   for (const phrase of extraction.allergen_statements.contains) {
@@ -181,6 +205,7 @@ function collectTextSources(extraction: Extraction): TextSource[] {
       bucket: "contains",
       kind: "contains",
       row: null,
+      statement_mismatch: statementBucketMismatch("contains", phrase.evidence_quote),
     });
   }
   for (const phrase of [...extraction.allergen_statements.may_contain, ...extraction.allergen_statements.other]) {
@@ -194,6 +219,7 @@ function collectTextSources(extraction: Extraction): TextSource[] {
       bucket: "precautionary",
       kind: "may_contain",
       row: null,
+      statement_mismatch: statementBucketMismatch("precautionary", phrase.evidence_quote),
     });
   }
   return sources;
@@ -304,12 +330,33 @@ function evaluateAllergen(
   label: string,
   sources: TextSource[],
   entries: AliasMapEntry[],
+  allEntries: AliasMapEntry[],
   extraction: Extraction,
   confirm: ConfirmState,
 ): ProfileResult {
   const hits: Hit[] = [];
   sources.forEach((source, order) => {
     const entry = bestEntryForTokens(normalizeTokens(source.label_text), entries);
+    const row = source.row;
+    const directEntry = row === null ? null : bestCertainEntryForText(row.label_text, allEntries);
+    const suggestion = row?.suggested_group ?? null;
+    const disagreement = directEntry !== null && suggestion !== null &&
+      directEntry.group !== suggestion.group && (directEntry.group === key || suggestion.group === key);
+    if (disagreement && directEntry && suggestion) {
+      const evidence = suggestion.group === key
+        ? textEvidence(source, "unverified_suggestion", suggestion.group)
+        : textEvidence(source, directEntry.kind === "exact" ? "exact" : "alias", directEntry.canonical ?? directEntry.group);
+      hits.push({ evidence, conflict: false, rule_id: "R9", rank: 5, order, flavor: "review",
+        explanation: `The printed term maps to ${directEntry.group}, while the model suggested ${suggestion.group}. Check this phrase against the photo; this remains a possible conflict until the disagreement is resolved.` });
+      return;
+    }
+    if (entry !== null && source.statement_mismatch !== null) {
+      const matchType: EvidenceItem["match_type"] = entry.kind === "exact" ? "exact" : entry.kind === "alias" ? "alias" : "ambiguous_term";
+      hits.push({ evidence: textEvidence(source, matchType, entry.canonical ?? entry.group), conflict: false,
+        rule_id: "R9", rank: 5, order, flavor: "review",
+        explanation: `${source.statement_mismatch} The quoted wording is “${source.evidence_quote}”. Check the statement on the photo; this remains a possible conflict until verified.` });
+      return;
+    }
     if (entry !== null) {
       const match_type: EvidenceItem["match_type"] =
         entry.kind === "exact" ? "exact" : entry.kind === "alias" ? "alias" : "ambiguous_term";
@@ -340,7 +387,6 @@ function evaluateAllergen(
       });
       return;
     }
-    const row = source.row;
     if (row !== null && row.suggested_group && row.suggested_group.group === key) {
       hits.push({
         evidence: textEvidence(source, "unverified_suggestion", row.suggested_group.group),
@@ -357,6 +403,7 @@ function evaluateAllergen(
 
 function allergenReason(winner: Hit, label: string): string {
   const quoted = `"${winner.evidence.label_text ?? ""}"`;
+  if (winner.rule_id === "R9" && winner.explanation) return winner.explanation;
   if (winner.rule_id === "R2") {
     return `${quoted} appears in a may-contain style statement, so ${label} may be present.`;
   }
@@ -471,7 +518,7 @@ function evaluateDiet(
   const hasVegMark = extraction.marks.some((mark) => mark.kind === "veg_mark");
   const hasNonvegMark = extraction.marks.some((mark) => mark.kind === "nonveg_mark");
   const hasUnclearMark = extraction.marks.some(
-    (mark) => mark.kind === "uncertain_diet_mark" || mark.review_required,
+    (mark) => mark.kind === "uncertain_diet_mark" || (mark.review_required && mark.kind !== "nonveg_mark"),
   );
   const markDisagreement = hasNonvegMark && (hasVegMark || hasUnclearMark);
 
@@ -482,7 +529,7 @@ function evaluateDiet(
         hits.push({
           evidence: markEvidence(mark),
           conflict: false,
-          rule_id: "R4",
+          rule_id: markDisagreement ? "R9" : "R4",
           rank: 2,
           order,
           flavor: markDisagreement ? "disagreement" : "review",
@@ -494,7 +541,7 @@ function evaluateDiet(
       hits.push({
         evidence: markEvidence(mark),
         conflict: !markDisagreement,
-        rule_id: "R4",
+        rule_id: markDisagreement ? "R9" : "R4",
         rank: 4,
         order,
         flavor: markDisagreement ? "disagreement" : "clear",
@@ -506,7 +553,7 @@ function evaluateDiet(
     hits.push({
       evidence: markEvidence(mark),
       conflict: false,
-      rule_id: "R4",
+      rule_id: markDisagreement ? "R9" : "R4",
       rank: 2,
       order,
       flavor: markDisagreement ? "disagreement" : "review",
@@ -526,7 +573,7 @@ function dietReason(winner: Hit, label: string): string {
   const isMark = winner.evidence.kind === "mark";
   const quoted = `"${winner.evidence.label_text ?? ""}"`;
   if (winner.flavor === "disagreement") {
-    return "The extracted diet-mark readings disagree or include an unclear mark; review the pictured evidence before relying on this comparison.";
+    return "The extracted diet-mark readings disagree or include an unclear mark; the pack has both vegetarian and non-vegetarian interpretations. Check both marks on the photo; this disagreement remains unresolved.";
   }
   if (winner.conflict) {
     if (isMark) return `The pack shows a non-vegetarian mark, which conflicts with ${label}.`;
@@ -568,7 +615,7 @@ export function compareProfile(
   const items: ProfileResult[] = [];
   for (const key of profile.allergens) {
     const entries = aliasMap.entries.filter((entry) => entry.group === key);
-    items.push(evaluateAllergen(key, allergenLabel(key), sources, entries, extraction, confirm));
+    items.push(evaluateAllergen(key, allergenLabel(key), sources, entries, aliasMap.entries, extraction, confirm));
   }
   for (const term of profile.custom_avoid) {
     items.push(evaluateCustom(term, sources, extraction, confirm));

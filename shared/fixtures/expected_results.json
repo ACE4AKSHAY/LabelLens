@@ -366,12 +366,12 @@
     },
     "expected": {
       "peanut": {
-        "status": "conflict",
-        "rule": "R1"
+        "status": "possible_conflict",
+        "rule": "R9"
       },
       "soy": {
         "status": "possible_conflict",
-        "rule": "R3"
+        "rule": "R9"
       }
     },
     "expect_evidence": {
@@ -393,7 +393,7 @@
       ]
     },
     "expect_reason_includes": {
-      "soy": "unverified"
+      "soy": "Check this phrase against the photo"
     }
   },
   {
@@ -510,7 +510,7 @@
     "expected": {
       "diet_vegetarian": {
         "status": "possible_conflict",
-        "rule": "R4"
+        "rule": "R9"
       }
     },
     "expect_reason_includes": {
@@ -548,7 +548,7 @@
     "expected": {
       "diet_vegan": {
         "status": "possible_conflict",
-        "rule": "R4"
+        "rule": "R9"
       }
     },
     "expect_reason_includes": {
@@ -572,7 +572,7 @@
     "expected": {
       "diet_vegetarian": {
         "status": "possible_conflict",
-        "rule": "R4"
+        "rule": "R9"
       }
     },
     "expect_reason_includes": {
