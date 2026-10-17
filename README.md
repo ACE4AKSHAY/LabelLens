@@ -1,45 +1,58 @@
 # LabelLens
 
-LabelLens helps shoppers understand packaged-food labels. A user photographs a product label, reviews the extracted ingredient and nutrition details, and compares visible evidence with their own dietary preferences.
+**Understand a packaged-food label from a photo, with the source evidence and uncertainty kept visible.**
 
-## MVP principles
+LabelLens extracts ingredient, allergen, nutrition, and package details from label photos. It compares extracted information with preferences stored in the browser and links flags to the wording that supports them. Missing or unreadable information stays **unknown**; it is never treated as proof that something is absent.
 
-- Keep the original label photo and source wording visible beside normalized ingredient names and extracted values.
-- Explain each match or potential conflict with the exact evidence that supports it.
-- Distinguish a detected conflict, a possible conflict, no conflict detected in readable text, and unknown because information is absent, unreadable, or ambiguous.
-- Never treat an ingredient that was not detected as proof that it is absent.
-- Keep product-catalog results separate from what the photographed label confirms.
+## Demo: packaged mango drink
 
-## Initial architecture
+This example uses the supplied label photo and its scan export. The export has been summarized for this README; the raw CSV is not included because it contains dietary profile entries.
 
-- Responsive React web UI.
-- FastAPI backend for image extraction; API credentials remain on the backend.
-- Profile preferences stored in browser `localStorage` for the MVP.
-- Active photo and scan held in memory; no server-side scan history or database in the MVP.
-- Deterministic profile-comparison rules with evidence-backed results.
-- Optional product lookup only after the photo-to-results flow works reliably.
+The reference label photo is included at [`docs/demo/mango-drink-label.jpeg`](docs/demo/mango-drink-label.jpeg); it is not displayed inline here.
 
-## Team ownership
+| What LabelLens extracted | Demo result |
+| --- | --- |
+| Ingredients | Water, mango pulp (11.1%), sugar, acidity regulators (330, 331(iii)), stabilizer (466), antioxidant (300), sweetener (960a), colour (110), and mango flavours. The original wording is retained in the app. |
+| Nutrition, per 100 ml | Energy 44 kcal; carbohydrate 11 g; total sugars 10.7 g; added sugars 9 g; total fat 0 g; protein 0 g; sodium 22.1 mg. |
+| Package details | Net quantity: 150 ml. The label also states that it contains steviol glycosides. |
+| Allergen statement | No allergen row was extracted. This does **not** confirm that allergens are absent. |
+| Preference comparison | Results remain **unknown** because the ingredient-list completeness and allergen statement were not confirmed. |
 
-- Person 1: UI, profile form, upload/camera flow, results and responsive polish.
-- Person 2: extraction API, shared contracts, integration lead.
-- Person 3: deterministic comparison rules, ingredient aliases and fixtures.
+This is a supplied scan export, not an accuracy benchmark. The photo is angled and small print is difficult to inspect; verify extracted values against the package. The result is not a product-safety determination or medical advice.
 
-Use the uploaded modular design document in `docs/` as the detailed product and implementation guide. The team ownership above reflects the current kickoff assignment.
+See the [full sanitized scan summary](docs/demo/scan-result-summary.md) for the source wording, extracted values, and uncertainty notes.
 
-## Local setup
+### Screen recordings
+
+- [Recording 1 — 07:03](docs/demo/recordings/Recording%202026-10-17%20070327.mp4) (49 seconds)
+- [Recording 2 — 07:07](docs/demo/recordings/Recording%202026-10-17%20070721.mp4) (56 seconds)
+
+## Features
+
+- Photo-based label extraction with evidence quotes tied to the source image.
+- Structured ingredients, allergen statements, nutrition values, and package details.
+- Browser-local dietary preferences and evidence-grounded comparison rules.
+- Clear states for conflicts, possible conflicts, no match in confirmed readable text, and unresolved information.
+- Review and correction flow for uncertain ingredient and allergen readings.
+- Responsive interface with dark and light themes and accessibility controls.
+- Mock mode for repeatable demos; optional live extraction through a configured vision provider.
+
+## Run locally
 
 ### Windows quick start
 
-From the repository root, double-click `install-once.bat` once per clone. It installs the backend and frontend dependencies and creates local `.env` files from the checked-in placeholder templates without overwriting existing files. It uses the `python` command, not the Windows `py` launcher.
+1. Clone the repository and open its root folder.
+2. Run `install-once.bat` to install dependencies and create local environment files from the example templates.
+3. Run `run-mock.bat`.
+4. Open <http://localhost:5173>.
 
-Then double-click `run-mock.bat`. It opens the backend and frontend in separate command windows; visit <http://localhost:5173>. No API key or live provider call is needed for the mock demo.
-
-For live mode, edit `backend/.env`, set `EXTRACT_MODE=live` and choose `VISION_PROVIDER=gemini` or `VISION_PROVIDER=glm`. Add the matching backend key (`GEMINI_API_KEY` or `GLM_API_KEY`), then double-click `run-live.bat`. GLM defaults to `glm-5.3-flash`. Live mode sends uploaded label photos to the selected provider; review its current terms before using real photos. Mock mode remains the default for demos.
+Mock mode needs no API key and does not extract text from the uploaded photo. It uses a clearly identified fixture. See [backend setup and live mode](backend/README.md) for manual setup and provider configuration.
 
 ### Manual setup
 
-The backend runs in mock mode by default. Keep credentials in `backend/.env`; never commit `.env` files or API keys. Start the backend in one terminal:
+Requirements: Node.js 22.6+ and Python 3.12+.
+
+Start the backend in one PowerShell terminal:
 
 ```powershell
 cd backend
@@ -50,16 +63,30 @@ if (!(Test-Path .env)) { Copy-Item .env.example .env }
 uvicorn app.main:app --reload --port 8000
 ```
 
-From the repository root, install and start the UI in a second terminal:
+Start the frontend in another terminal from the repository root:
 
 ```powershell
 npm run install:frontend
 npm run dev
 ```
 
-The UI defaults to mock mode. It computes results with the browser-side deterministic rules. For real extraction, set `VITE_EXTRACT_MODE=live` in `frontend/.env`, keep `EXTRACT_MODE=live` in `backend/.env`, choose a `VISION_PROVIDER`, set that provider's key, and review its terms and access limits first.
+The default is mock mode. To use live extraction, configure the backend provider and key in the ignored `backend/.env`, set `VITE_EXTRACT_MODE=live` in the ignored `frontend/.env`, then restart both processes. See [backend/README.md](backend/README.md) for supported providers, fallback behavior, and exact variables.
 
-From the repository root, run the UI, rules, and fixture checks:
+## Bring Your Own Key (BYOK)
+
+Live extraction uses the API key supplied by the person operating the local backend. Keep it in `backend/.env`; never place it in frontend code, commit it, or show it in a screenshot or recording. Label photos are sent to the selected vision provider for live extraction. Dietary preferences remain in the browser and are not sent to the backend. The key owner is responsible for provider access, quotas, billing, and current terms. See [API and privacy details](docs/API_CONTRACT.md).
+
+## Architecture
+
+- **Frontend:** React, TypeScript, and Vite.
+- **Backend:** FastAPI with a shared, schema-validated extraction contract.
+- **Extraction:** Mock fixtures by default; optional Gemini or GLM live provider, with configured fallback behavior.
+- **Comparison:** Deterministic browser-side rules; profile data stays client-side.
+- **Storage:** Browser `localStorage` for preferences. The MVP has no server-side user profiles or scan-history database.
+
+## Checks
+
+Run from the repository root:
 
 ```powershell
 npm run test:a
@@ -68,53 +95,19 @@ npm run check:rules
 npm run validate:fixtures
 ```
 
-The backend, UI, and Module C rules are integrated. UI styling is isolated in `frontend/src/styles/` for the planned reskin.
+The fixture validator requires Python with the backend dependencies installed. See [package scripts](package.json) and [backend setup](backend/README.md).
 
-## Unclear readings and corrections
+## Evaluation and limitations
 
-- Image quality values and notes are model estimates, not calibrated measures of photo quality or OCR accuracy. Curvature, folds, glare, blur, cropping, and visible obstruction may be noted when they affect reading; section status still records whether the panel was complete, partial, unreadable, or absent from the photos.
-- Corrections can edit only extracted ingredient and allergen rows. They stay in the active browser scan, preserve the original quote and photo index, appear as user-edited wording, and immediately recompute profile comparisons. Editing does not clear an unresolved-row flag; the user must separately check the row against the photo.
-- Corrections never add rows or change section completeness. Empty or incomplete extraction remains unknown. The Mission 02 checks use fictional fixtures and a test-only OCR typo tied to existing evidence; they do not validate real-photo accuracy. No live Gemini or physical-camera test was run.
+Mission reports and test data are in [`docs/`](docs/):
 
-## Module C — deterministic comparison rules (Person 3)
+- [Mission 02: unclear labels and corrections](docs/MISSION_02_VALIDATION.md)
+- [Mission 03: evidence-grounded comparison](docs/MISSION_03_VALIDATION.md)
+- [Mission 04 test reports](docs/MISSION_04_TEST_02_REPORT.md) and [Test 03](docs/MISSION_04_TEST_03_REPORT.md)
+- [API contract, uncertainty, and provider behavior](docs/API_CONTRACT.md)
 
-`compareProfile(extraction, profile, confirm, aliasMap) → Results` is a pure function that implements rules R1–R8 of the design document (Section 8). It never rewrites displayed label wording, never sends the profile anywhere, and never says a product is safe: "No match found in readable label text. This is not a safety check." is the strongest wording it can produce, and only through the strict R6 gate (ingredients complete + confirmed, allergen line complete + confirmed or declared absent, and no ingredient/allergen row needing review).
+Fixture checks verify application rules and schema handling; they do not establish real-world OCR accuracy. Quality estimates are uncalibrated. Small, curved, blurry, or obscured print can be misread, and product labels may change by region or batch. Always verify important details on the package. LabelLens does not certify products, infer missing ingredients, or provide medical advice.
 
-### Files
+## AI and development disclosure
 
-- `frontend/src/domain/compareProfile.ts` — the rules engine (pure TypeScript; type-only import of `shared/contracts.ts`).
-- `frontend/src/domain/aliasMap.json` — India-relevant ingredient aliases and diet terms; every entry ships `reviewed: false` until a teammate verifies it. Unreviewed aliases and ambiguous terms can only ever raise `possible_conflict`.
-- `shared/fixtures/extraction/*.json` — hand-written, fictional, schema-shaped fixtures covering clear matches, clear non-matches, ambiguous aliases, unreadable text, missing panels, may-contain lines, diet marks, edited rows, custom-avoid terms, and nutrition values (kept "unknown ≠ zero").
-- `shared/fixtures/expected_results.json` — expected status and rule per profile item for golden cases G1–G17 plus G0 (the sample fixture) and X1–X3 (extras).
-- `scripts/check_rules.mjs`, `scripts/validate_fixtures.py` — the two checks below.
-
-### Checks
-
-```bash
-npm run check:rules            # golden cases G0-X3: expected vs actual per item, PASS/FAIL (needs Node 22.6+)
-python scripts/validate_fixtures.py   # validates every fixture against the frozen Pydantic contract (needs Python 3.12+)
-```
-
- `check:rules` also mirrors the contract structurally so it runs without Python; the Pydantic script remains the authoritative schema check. Integration verification passed: 106 UI checks, a production TypeScript/Vite build, 21/21 golden rule cases, and 19/19 fixtures against the backend Pydantic contract.
-
-### How the UI uses it (Person 1)
-
-```ts
-import { compareProfile } from "../domain/compareProfile";
-import aliasMap from "../domain/aliasMap.json";
-
-const results = compareProfile(extraction, profile, confirm, aliasMap);
-```
-
-Call it after every extraction, ingredient or allergen phrase correction, explicit row confirmation (clears `review_required`), and completeness confirmation, then render `results.items` in the given order (already sorted by severity). Evidence items carry the original printed quote and the current comparison wording; `mapped_to` is the canonical term for the "Recognized as" column.
-
-### Decisions recorded on this branch (none change the frozen contract)
-
-1. `other` allergen phrases are compared like may-contain phrases (R2, precautionary) and carry evidence `kind: "may_contain"` because the frozen `EvidenceItem` enum has no `"other"` — flagged to Person 2 for review.
-2. Diet terms found in `may_contain`/`other` phrases raise `possible_conflict` via R2; R4's text only names ingredients. `contains` phrases are treated like ingredient rows for diet terms. Flagged to Person 2.
-3. An unclear or `review_required` diet mark affects only the diet item (R4); it does not block R6 for allergen items, which per R6's letter gate on ingredient/allergen-statement rows only. Flagged to Person 2.
-4. G1 and G11 test the reviewed-alias/reviewed-diet-term paths using per-case `reviewed_terms` / `reviewed_diet_terms` overrides in `expected_results.json`; the shipped `aliasMap.json` stays `reviewed: false` until each entry is verified.
-5. Known alias-noise cases (measured, not assumed): the milk alias `butter` also matches "Cocoa Butter" (stays `possible_conflict` because it is unreviewed); the exact token `milk` matches "Coconut Milk" (would be `conflict`); "buttermilk" does not match `milk` because matching is whole-word. Matching is deliberately free of substring rules, so "nutmeg" never matches tree nuts. The team should decide on disambiguation (e.g. negative entries or extended phrases) before reviewing the `butter` entry.
-6. `lactose` is kept `ambiguous` (team to decide alias vs ambiguous per Appendix 19.3), and `edible vegetable oil` is mapped `ambiguous → peanut` as an India-relevant example; confirm or drop it to avoid noise.
-7. The UI marks corrected ingredient and allergen phrases using browser-local correction state; result evidence retains the original quote and photo index, shows corrected wording separately, and adds no fields to EvidenceItem.
-
+LabelLens uses a configured third-party vision/LLM provider for live extraction. The project also used AI-assisted coding and development tools. Live mode is opt-in; consult the provider's current terms before sending label photos.
