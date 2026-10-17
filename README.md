@@ -2,6 +2,8 @@
 
 **Understand a packaged-food label from a photo, with the source evidence and uncertainty kept visible.**
 
+**Live judge demo:** [label-lens-five.vercel.app](https://label-lens-five.vercel.app)
+
 LabelLens extracts ingredient, allergen, nutrition, and package details from label photos. It compares extracted information with preferences stored in the browser and links flags to the wording that supports them. Missing or unreadable information stays **unknown**; it is never treated as proof that something is absent.
 
 ## Demo: packaged mango drink
@@ -111,11 +113,10 @@ Fixture checks verify application rules and schema handling; they do not establi
 
 ## AI and development disclosure
 
-OpenAI Codex and Google Antigravity were used for development assistance, including implementation and fixture/report work. Anthropic Claude was used for UI ideation. Live extraction is an optional backend-only integration with the Google Gemini API; limited local requests are documented in [the API contract](docs/API_CONTRACT.md) and are not an OCR accuracy benchmark. An optional GLM adapter is present but was not relied on for verified live results. Label photos are sent to the configured provider only in live mode; dietary profiles stay in the browser. Live mode is opt-in, and provider suitability for a public shopper-facing deployment remains unresolved.
+OpenAI Codex and Google Antigravity were used for development assistance, including implementation and fixture/report work. Anthropic Claude was used for UI ideation. Live extraction uses the Google Gemini API; limited requests are documented in [the API contract](docs/API_CONTRACT.md) and are not an OCR accuracy benchmark. An optional GLM adapter is present but was not relied on for verified live results. The current judge deployment has live mode enabled with the operator's server-side key; anyone with the public URL can submit scans. Local development defaults to mock mode. Label photos are sent to the configured provider in live mode, while dietary profiles stay in the browser. Provider suitability for a public shopper-facing deployment remains unresolved.
 
 ## Future improvements
 
 - Evaluate transcription and uncertainty handling against consented, human-annotated real-label photos across packaging, languages, and image conditions.
 - Calibrate image-quality estimates and improve recovery for curved, small, blurry, and partially obscured text.
 - Complete provider policy and operational review before enabling public live scans; add monitoring for latency, quotas, and provider outages.
-- Deploy and smoke-test the app, then verify that the demo recordings are accessible to reviewers.
