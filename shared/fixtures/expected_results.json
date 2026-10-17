@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Golden-case expectations for compareProfile. G1-G17 follow Appendix 19.2 of the design document; G0 is the pre-existing sample fixture; X1-X3 are Module C extras (other-bucket phrases, custom-avoid terms, unreadable text). reviewed_terms / reviewed_diet_terms model a teammate having verified a mapping for that case only; the shipped aliasMap.json stays reviewed:false everywhere.",
+  "description": "Golden-case expectations for compareProfile. G1-G17 follow Appendix 19.2 of the design document; G0 is the pre-existing sample fixture; X1-X3 are Module C extras (other-bucket phrases, custom-avoid terms, unreadable text). reviewed_terms / reviewed_diet_terms model a teammate having verified a mapping for that case only; the shipped aliasMap.json stays reviewed:false everywhere. Mission 3 adds suggestion disagreement, profile-specific, incomplete-evidence, and dietary-mark disagreement regressions.",
   "default_profile": {
     "schema_version": "1",
     "allergens": ["peanut", "milk", "tree_nut"],
@@ -346,6 +346,252 @@
         "milk": { "status": "unknown", "rule": "R7" }
       },
       "expect_reason_includes": { "milk": "needs review" }
+    },
+  {
+    "id": "M3-01",
+    "fixture": "m3_suggestion_disagrees_with_text.json",
+    "profile": {
+      "schema_version": "1",
+      "allergens": [
+        "peanut",
+        "soy"
+      ],
+      "custom_avoid": [],
+      "diet": "none"
+    },
+    "confirm": {
+      "ingredients_complete": true,
+      "allergen_statement_complete": true,
+      "pack_has_no_allergen_statement": false
+    },
+    "expected": {
+      "peanut": {
+        "status": "conflict",
+        "rule": "R1"
+      },
+      "soy": {
+        "status": "possible_conflict",
+        "rule": "R3"
+      }
+    },
+    "expect_evidence": {
+      "peanut": [
+        {
+          "label_text": "Peanut Flour",
+          "evidence_quote": "Peanut Flour",
+          "image_index": 0,
+          "match_type": "exact"
+        }
+      ],
+      "soy": [
+        {
+          "label_text": "Peanut Flour",
+          "evidence_quote": "Peanut Flour",
+          "image_index": 0,
+          "match_type": "unverified_suggestion"
+        }
+      ]
+    },
+    "expect_reason_includes": {
+      "soy": "unverified"
     }
+  },
+  {
+    "id": "M3-02",
+    "fixture": "m3_suggestion_without_text_match.json",
+    "profile": {
+      "schema_version": "1",
+      "allergens": [
+        "peanut"
+      ],
+      "custom_avoid": [],
+      "diet": "none"
+    },
+    "confirm": {
+      "ingredients_complete": true,
+      "allergen_statement_complete": true,
+      "pack_has_no_allergen_statement": false
+    },
+    "expected": {
+      "peanut": {
+        "status": "possible_conflict",
+        "rule": "R3"
+      }
+    },
+    "expect_evidence": {
+      "peanut": [
+        {
+          "label_text": "Sunflower Oil",
+          "evidence_quote": "Sunflower Oil",
+          "image_index": 0,
+          "match_type": "unverified_suggestion"
+        }
+      ]
+    }
+  },
+  {
+    "id": "M3-03",
+    "fixture": "m3_suggestion_without_text_match.json",
+    "profile": {
+      "schema_version": "1",
+      "allergens": [
+        "sesame"
+      ],
+      "custom_avoid": [],
+      "diet": "none"
+    },
+    "confirm": {
+      "ingredients_complete": true,
+      "allergen_statement_complete": true,
+      "pack_has_no_allergen_statement": false
+    },
+    "expected": {
+      "sesame": {
+        "status": "no_match_found",
+        "rule": "R6"
+      }
+    }
+  },
+  {
+    "id": "M3-04",
+    "fixture": "m3_incomplete_suggestion.json",
+    "profile": {
+      "schema_version": "1",
+      "allergens": [
+        "peanut",
+        "sesame"
+      ],
+      "custom_avoid": [],
+      "diet": "none"
+    },
+    "confirm": {
+      "ingredients_complete": false,
+      "allergen_statement_complete": true,
+      "pack_has_no_allergen_statement": false
+    },
+    "expected": {
+      "peanut": {
+        "status": "possible_conflict",
+        "rule": "R3"
+      },
+      "sesame": {
+        "status": "unknown",
+        "rule": "R7"
+      }
+    },
+    "expect_reason_includes": {
+      "sesame": "only partly readable"
+    },
+    "expect_evidence": {
+      "peanut": [
+        {
+          "label_text": "Sunflower Oil",
+          "evidence_quote": "Sunflower Oil",
+          "image_index": 0,
+          "match_type": "unverified_suggestion"
+        }
+      ]
+    }
+  },
+  {
+    "id": "M3-05",
+    "fixture": "m3_contradictory_diet_marks.json",
+    "profile": {
+      "schema_version": "1",
+      "allergens": [],
+      "custom_avoid": [],
+      "diet": "vegetarian"
+    },
+    "confirm": {
+      "ingredients_complete": true,
+      "allergen_statement_complete": true,
+      "pack_has_no_allergen_statement": false
+    },
+    "expected": {
+      "diet_vegetarian": {
+        "status": "possible_conflict",
+        "rule": "R4"
+      }
+    },
+    "expect_reason_includes": {
+      "diet_vegetarian": "readings disagree"
+    },
+    "expect_evidence": {
+      "diet_vegetarian": [
+        {
+          "visual_description": "brown dot inside a brown square",
+          "image_index": 0,
+          "evidence_quote": null
+        },
+        {
+          "visual_description": "green dot inside a green square",
+          "image_index": 1,
+          "evidence_quote": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "M3-06",
+    "fixture": "m3_contradictory_diet_marks.json",
+    "profile": {
+      "schema_version": "1",
+      "allergens": [],
+      "custom_avoid": [],
+      "diet": "vegan"
+    },
+    "confirm": {
+      "ingredients_complete": true,
+      "allergen_statement_complete": true,
+      "pack_has_no_allergen_statement": false
+    },
+    "expected": {
+      "diet_vegan": {
+        "status": "possible_conflict",
+        "rule": "R4"
+      }
+    },
+    "expect_reason_includes": {
+      "diet_vegan": "readings disagree"
+    }
+  },
+  {
+    "id": "M3-07",
+    "fixture": "m3_unresolved_diet_mark.json",
+    "profile": {
+      "schema_version": "1",
+      "allergens": [],
+      "custom_avoid": [],
+      "diet": "vegetarian"
+    },
+    "confirm": {
+      "ingredients_complete": true,
+      "allergen_statement_complete": true,
+      "pack_has_no_allergen_statement": false
+    },
+    "expected": {
+      "diet_vegetarian": {
+        "status": "possible_conflict",
+        "rule": "R4"
+      }
+    },
+    "expect_reason_includes": {
+      "diet_vegetarian": "include an unclear mark"
+    },
+    "expect_evidence": {
+      "diet_vegetarian": [
+        {
+          "visual_description": "brown dot inside a brown square",
+          "image_index": 0,
+          "evidence_quote": null
+        },
+        {
+          "visual_description": "a dietary logo with its inner symbol obscured",
+          "image_index": 1,
+          "evidence_quote": null
+        }
+      ]
+    }
+  }
   ]
 }

@@ -1,0 +1,114 @@
+{
+  "schema_version": "1",
+  "analysis_id": "fixture-m3-suggestion-without-matching-text",
+  "images": [
+    {
+      "index": 0,
+      "role": "ingredients",
+      "quality": "good",
+      "note": null
+    }
+  ],
+  "product": {
+    "name": "Mission 3 Sunflower Oil Test",
+    "brand": null,
+    "quantity": "120 g"
+  },
+  "package_facts": [],
+  "sections": {
+    "ingredients": {
+      "status": "readable_complete",
+      "text": "Refined Wheat Flour (Maida), Sugar, Palm Oil, Sunflower Oil, Raising Agent (INS 500), Salt",
+      "image_index": 0,
+      "reason": null
+    },
+    "allergen_statement": {
+      "status": "readable_complete",
+      "text": "Contains: Nil.",
+      "image_index": 0,
+      "reason": null
+    },
+    "nutrition": {
+      "status": "not_uploaded",
+      "text": null,
+      "image_index": null,
+      "reason": "Nutrition panel not uploaded."
+    },
+    "product_details": {
+      "status": "readable_complete",
+      "text": "Sample Orange Cream Biscuit; Net quantity 120 g",
+      "image_index": 0,
+      "reason": null
+    }
+  },
+  "ingredients": [
+    {
+      "id": "ing-1",
+      "label_text": "Refined Wheat Flour (Maida)",
+      "evidence_quote": "Refined Wheat Flour (Maida)",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    },
+    {
+      "id": "ing-2",
+      "label_text": "Sugar",
+      "evidence_quote": "Sugar",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    },
+    {
+      "id": "ing-3",
+      "label_text": "Palm Oil",
+      "evidence_quote": "Palm Oil",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    },
+    {
+      "id": "ing-4",
+      "label_text": "Sunflower Oil",
+      "evidence_quote": "Sunflower Oil",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null,
+      "suggested_group": {
+        "group": "peanut",
+        "note": "Unverified model suggestion; the printed wording does not name peanut."
+      }
+    },
+    {
+      "id": "ing-5",
+      "label_text": "Raising Agent (INS 500)",
+      "evidence_quote": "Raising Agent (INS 500)",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    },
+    {
+      "id": "ing-6",
+      "label_text": "Salt",
+      "evidence_quote": "Salt",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    }
+  ],
+  "allergen_statements": {
+    "contains": [],
+    "may_contain": [],
+    "other": []
+  },
+  "marks": [
+    {
+      "kind": "veg_mark",
+      "visual_description": "green dot inside a green square",
+      "image_index": 0,
+      "review_required": false,
+      "review_reason": null
+    }
+  ],
+  "nutrition": [],
+  "warnings": []
+}
