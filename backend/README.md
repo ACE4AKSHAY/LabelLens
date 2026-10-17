@@ -15,6 +15,20 @@ uvicorn app.main:app --reload --port 8000
 
 The checked-in `.env.example` uses mock mode and contains no credential. `EXTRACT_MODE=mock` returns the fictional shared fixture and makes no Google API call. Its response warning says that the content was not extracted from the uploaded image.
 
+## Bring Your Own Key (BYOK)
+
+For a local live run, the operator supplies their own Gemini or Z.AI API key in `backend/.env`. This is a developer/operator setting, not a key-entry feature for shoppers. Keep the key on the backend; never add it to frontend configuration, source files, Git, screenshots, or demo recordings. The operator is responsible for provider access, free-tier limits, billing, and current terms. When a live scan starts, the uploaded label photos are sent to the selected provider; dietary profile data remains in the browser.
+
+For a Gemini live demo, set these values in `backend/.env`:
+
+```dotenv
+EXTRACT_MODE=live
+VISION_PROVIDER=gemini
+GEMINI_API_KEY=your-own-key
+```
+
+Set `VITE_EXTRACT_MODE=live` in the ignored `frontend/.env`, then restart both servers. Keep `VITE_API_BASE=/api`; the key itself must never appear in the frontend. The UI displays a provider disclosure before a live upload. To return to fixture-based demos, set both mode values to `mock` and restart.
+
 ## Environment
 
 - `EXTRACT_MODE=mock|live` — defaults to `mock`.

@@ -62,7 +62,39 @@
   grid-area: actions;
   display: flex;
   align-items: center;
-  gap: var(--s1);
+  gap: 4px;
+}
+
+.theme-toggle {
+  gap: 6px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r2);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.theme-toggle:hover:not(:disabled) {
+  border-color: var(--rule-strong);
+}
+
+.text-size-toggle {
+  gap: 6px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r2);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.text-size-toggle > span:first-child {
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+@media (max-width: 480px) {
+  .theme-toggle span,
+  .text-size-label {
+    display: none;
+  }
 }
 
 .step-strip {

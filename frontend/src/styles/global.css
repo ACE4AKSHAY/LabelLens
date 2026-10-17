@@ -21,15 +21,7 @@ body {
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   background-color: var(--paper);
-  /* Faint paper grain: one tiny inline SVG, no request, no animation. */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .35 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
   -webkit-font-smoothing: antialiased;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background-image: none; /* grain is tuned for light paper only */
-  }
 }
 
 /* Headings are serif; UI chrome stays sans. */
@@ -116,6 +108,13 @@ samp,
   border-radius: var(--r1);
 }
 
+@media (prefers-contrast: more) {
+  :focus-visible {
+    outline-width: 4px;
+    outline-offset: 3px;
+  }
+}
+
 :focus:not(:focus-visible) {
   outline: none;
 }
@@ -146,7 +145,7 @@ samp,
 .card {
   background: var(--sheet);
   border: 1px solid var(--rule);
-  border-radius: var(--r1);
+  border-radius: var(--r3);
   padding: var(--s4);
 }
 
