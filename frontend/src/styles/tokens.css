@@ -1,57 +1,110 @@
-/* LabelLens design tokens — Section 9 quick design system.
-   Calm, consumer-friendly grocery helper. One accent (teal) for navigation and
-   primary actions ONLY — never to imply safety. Status is always text + icon +
-   border pattern, never color alone. */
+/* LabelLens design tokens: "Printed Label" + "Aisle View".
+   Warm paper, dark ink, ONE restrained accent (indigo). The accent is used for
+   primary actions, links, focus and the current step only. It is never a status
+   colour and never implies safety. There is no green anywhere in this file.
+   Status is always text + shape/icon + colour, never colour alone.
+   Names match docs/design/preview.html and shared status components. */
 
 :root {
-  /* Surfaces */
-  --canvas: #f7f6f2;
-  --surface: #ffffff;
-  --surface-sunken: #f1efe9;
-  --border: #e3e0d7;
-  --border-strong: #c9c5b8;
+  color-scheme: light dark;
+
+  /* Paper */
+  --paper: #f5f0e4; /* page */
+  --paper-2: #ece5d3; /* wells, hover */
+  --sheet: #fbf8f0; /* raised surface */
+  --rule: #d6ccb4; /* hairlines */
+  --rule-strong: #a39a80; /* control borders (>=3:1 on paper) */
 
   /* Ink */
-  --ink: #202a28;
-  --ink-soft: #57605d;
-  --ink-faint: #6d7673;
+  --ink: #1c1a16;
+  --ink-2: #47433a;
+  --ink-3: #645f50; /* AA on paper: minimum for body text */
 
-  /* Accent — navigation / primary actions only */
-  --accent: #147d64;
-  --accent-hover: #106855;
-  --accent-soft: #e7f1ee;
-  --focus-ring: #147d64;
+  /* Accent: indigo */
+  --accent: #34379a;
+  --accent-hover: #272a7e;
+  --accent-soft: #e3e2f2;
+  --on-accent: #ffffff;
+  --focus: #34379a;
+  --field: #ffffff; /* text input and checkbox fill */
 
-  /* Status colors (paired with icon + border pattern in components) */
-  --status-conflict: #b42318;
-  --status-conflict-soft: #fbeae8;
-  --status-possible: #9a6700;
-  --status-possible-soft: #fdf3e0;
-  --status-unknown: #475569;
-  --status-unknown-soft: #eef1f5;
-  --status-nomatch: #64748b;
-  --status-nomatch-soft: #f0f2f5;
+  /* Status: text colour + soft background. Shapes differ per state. */
+  --st-conflict: #a52a16;
+  --st-conflict-bg: #f6e0da;
+  --st-possible: #7a4e00;
+  --st-possible-bg: #f6e8c8;
+  --st-unknown: #3d4858;
+  --st-unknown-bg: #e4e7ec;
+  --st-nomatch: #55564e;
+  --st-nomatch-bg: #ece8dc;
 
-  /* Spacing — 8px steps */
-  --sp-1: 8px;
-  --sp-2: 16px;
-  --sp-3: 24px;
-  --sp-4: 32px;
-  --sp-5: 40px;
-  --sp-6: 48px;
+  /* Space */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
 
-  /* Radii */
-  --r-card: 18px;
-  --r-inner: 14px;
-  --r-chip: 999px;
+  /* Radius */
+  --r1: 3px; /* quotes, chips, badges */
+  --r2: 8px; /* controls */
+  --r3: 14px; /* sheets */
+  --shadow-pop: 0 8px 24px rgba(28, 26, 22, 0.18);
 
-  /* Shadow — exactly one soft level */
-  --shadow: 0 1px 2px rgba(32, 42, 40, 0.05), 0 6px 20px rgba(32, 42, 40, 0.07);
+  /* Type: system stacks only, no external requests */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+    Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+    "Courier New", monospace;
 
-  /* Type */
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+  /* Type scale (rem so text enlargement and 200% zoom work) */
+  --fs-label: 0.8125rem; /* 13 small-caps labels */
+  --fs-meta: 0.875rem; /* 14 */
+  --fs-body: 0.9375rem; /* 15 body / UI */
+  --fs-section: 1.0625rem; /* 17 */
+  --fs-card: 1.125rem; /* 18 */
+  --fs-page: 1.5rem; /* 24 page title, serif */
+  --track-label: 0.06em;
 
   /* Touch */
   --tap: 44px;
+
+  /* Motion */
+  --t-fast: 120ms;
+}
+
+/* Dark mode: same tokens remapped. Paper-and-ink inverted, accent lightened. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #17150f;
+    --paper-2: #0f0e0a;
+    --sheet: #211e17;
+    --rule: #3a3528;
+    --rule-strong: #7a7360;
+
+    --ink: #f1ece0;
+    --ink-2: #cbc4b2;
+    --ink-3: #a8a18d;
+
+    --accent: #b3b5f2;
+    --accent-hover: #cbcdf8;
+    --accent-soft: #26274f;
+    --on-accent: #14153f;
+    --focus: #b3b5f2;
+    --field: #14120d;
+    --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+    --st-conflict: #ff9f8a;
+    --st-conflict-bg: #3f1e18;
+    --st-possible: #f1c46e;
+    --st-possible-bg: #3a2c0d;
+    --st-unknown: #b8c3d4;
+    --st-unknown-bg: #262c36;
+    --st-nomatch: #bcbcb0;
+    --st-nomatch-bg: #2b2a24;
+  }
 }

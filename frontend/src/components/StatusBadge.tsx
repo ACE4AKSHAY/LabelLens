@@ -17,32 +17,32 @@ export const STATUS_META: Record<
   conflict: {
     label: "Conflict",
     border: "solid",
-    color: "var(--status-conflict)",
-    soft: "var(--status-conflict-soft)",
+    color: "var(--st-conflict)",
+    soft: "var(--st-conflict-bg)",
   },
   possible_conflict: {
     label: "Possible conflict",
     border: "dashed",
-    color: "var(--status-possible)",
-    soft: "var(--status-possible-soft)",
+    color: "var(--st-possible)",
+    soft: "var(--st-possible-bg)",
   },
   unknown: {
     label: "Unknown",
     border: "dotted",
-    color: "var(--status-unknown)",
-    soft: "var(--status-unknown-soft)",
+    color: "var(--st-unknown)",
+    soft: "var(--st-unknown-bg)",
   },
   no_match_found: {
     label: "No match found",
     border: "solid",
-    color: "var(--status-nomatch)",
-    soft: "var(--status-nomatch-soft)",
+    color: "var(--st-nomatch)",
+    soft: "var(--st-nomatch-bg)",
   },
   not_applicable: {
     label: "Not applicable",
     border: "solid",
-    color: "var(--status-nomatch)",
-    soft: "var(--status-nomatch-soft)",
+    color: "var(--st-nomatch)",
+    soft: "var(--st-nomatch-bg)",
   },
 };
 

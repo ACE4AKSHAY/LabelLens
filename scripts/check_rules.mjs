@@ -153,6 +153,21 @@ function validateFixtureShape(extraction, name) {
   return problems;
 }
 
+function evidenceMatchesSource(evidence, extraction) {
+  if (evidence.kind === "mark") {
+    return evidence.evidence_quote === null && evidence.label_text === null &&
+      extraction.marks.some((mark) => mark.visual_description === evidence.visual_description && mark.image_index === evidence.image_index);
+  }
+  const rows = [
+    ...extraction.ingredients,
+    ...extraction.allergen_statements.contains,
+    ...extraction.allergen_statements.may_contain,
+    ...extraction.allergen_statements.other,
+  ];
+  return evidence.visual_description === null &&
+    rows.some((row) => row.label_text === evidence.label_text && row.evidence_quote === evidence.evidence_quote && row.image_index === evidence.image_index);
+}
+
 function buildAliasMap(base, testCase) {
   const map = structuredClone(base);
   for (const term of testCase.reviewed_terms ?? []) {
@@ -236,8 +251,20 @@ for (const testCase of expected.cases) {
         if (!got.includes(text)) problems.push(`${key}: evidence is missing label_text "${text}" (got: ${JSON.stringify(got)})`);
       }
     }
+    const expectedEvidence = testCase.expect_evidence?.[key] ?? [];
+    for (const expectedItem of expectedEvidence) {
+      const found = item.evidence.some((evidence) =>
+        Object.entries(expectedItem).every(([field, value]) => evidence[field] === value),
+      );
+      if (!found) problems.push(key + ": expected evidence not found: " + JSON.stringify(expectedItem));
+    }
   }
   for (const item of results.items) {
+    for (const evidence of item.evidence) {
+      if (!evidenceMatchesSource(evidence, extraction)) {
+        problems.push(item.profile_key + ": evidence does not preserve a source quote/image reference: " + JSON.stringify(evidence));
+      }
+    }
     if (!testCase.expected[item.profile_key]) {
       problems.push(`${item.profile_key}: result item has no recorded expectation`);
     }

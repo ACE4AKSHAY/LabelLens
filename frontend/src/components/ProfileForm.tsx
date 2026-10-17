@@ -60,7 +60,7 @@ export function ProfileForm({
       }}
     >
       <fieldset className="profile-group">
-        <legend>Allergens to avoid</legend>
+        <legend className="caps">Allergens to avoid</legend>
         <p className="small muted">
           Pick what you need to steer clear of. You can change this any time.
         </p>
@@ -82,7 +82,7 @@ export function ProfileForm({
       </fieldset>
 
       <fieldset className="profile-group">
-        <legend>Other ingredients you avoid</legend>
+        <legend className="caps">Other ingredients you avoid</legend>
         <p className="small muted">
           Matched exactly as printed on the pack — for example “sulphite” or a
           brand name.
@@ -133,7 +133,7 @@ export function ProfileForm({
       </fieldset>
 
       <fieldset className="profile-group">
-        <legend>Diet</legend>
+        <legend className="caps">Diet</legend>
         <div className="check-grid check-grid-diet">
           {DIET_OPTIONS.map(({ value, label, hint }) => {
             const on = profile.diet === value;
@@ -155,7 +155,11 @@ export function ProfileForm({
         </div>
       </fieldset>
 
-      <div className="row profile-actions">
+      <p className="small muted profile-privacy">
+        Your profile is saved only in this browser (localStorage) and is never
+        sent anywhere.
+      </p>
+      <div className="profile-actions">
         <button
           type="button"
           className="btn btn-primary"
@@ -174,10 +178,6 @@ export function ProfileForm({
           Clear profile
         </button>
       </div>
-      <p className="small muted">
-        Your profile is saved only in this browser (localStorage) and is never
-        sent anywhere.
-      </p>
     </form>
   );
 }

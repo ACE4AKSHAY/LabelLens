@@ -46,16 +46,20 @@ export function ScanPage({
   const { profile } = useProfile();
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
 
-  // "Inspect reading" from a warning: scroll to the row and flash it.
+  // Warnings can point to a row that needs another look. Scroll to that row
+  // and briefly outline it; do not imply that the warning is a verdict.
   const inspectRow = (rowId: string) => {
-    const el = document.querySelector(`[data-row-id="${CSS.escape(rowId)}"]`);
+    const el = Array.from(document.querySelectorAll<HTMLElement>("[data-row-id]"))
+      .find((item) => item.dataset.rowId === rowId);
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "center",
+    });
     el.classList.add("row-inspect-highlight");
-    window.setTimeout(
-      () => el.classList.remove("row-inspect-highlight"),
-      1800,
-    );
+    window.setTimeout(() => el.classList.remove("row-inspect-highlight"), 1800);
   };
 
   const editedEvidence = useMemo(
@@ -66,13 +70,48 @@ export function ScanPage({
     [scan.extraction, scan.corrections],
   );
 
+  const openPhotos = () => {
+    const target = document.getElementById("scan-photo-panel");
+    if (!target) return;
+    target.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
+  };
+
   const capturePhase = scan.phase !== "results";
 
   return (
     <div className={`page scan-page ${capturePhase ? "scan-capture" : "scan-results"}`}>
       <div className="workspace">
+        {capturePhase && (
+          <header className="ws ws-intro">
+            <h1>Photograph the label</h1>
+            <p className="lede">
+              Checking for: <strong>{profileSummary(profile)}</strong>{" "}
+              <button type="button" className="btn btn-quiet btn-sm" onClick={onEditProfile}>
+                Edit profile
+              </button>
+            </p>
+            {!hasProfile && (
+              <div className="note" role="note">
+                <InfoIcon />
+                <p className="small">
+                  <strong>No restrictions selected.</strong> You can still scan
+                  a label, but there is nothing to compare it against yet.{" "}
+                  <button type="button" className="btn btn-sm" onClick={onEditProfile}>
+                    Set up your profile
+                  </button>
+                </p>
+              </div>
+            )}
+          </header>
+        )}
+
         {/* Photo / capture column */}
-        <aside className="ws ws-photo">
+        <aside className="ws ws-photo" id="scan-photo-panel">
           {capturePhase ? (
             <PhotoCapture />
           ) : (
@@ -80,16 +119,25 @@ export function ScanPage({
               <summary>
                 Photos ({scan.photos.length})
                 <span className="small muted photo-summary-hint">
-                  tap an evidence item's “Show on photo” to find it here
+                  {scan.photos.length > 0
+                    ? "Select a photo below to review the full image."
+                    : "This saved sample has extracted text only; no photo is attached."}
                 </span>
               </summary>
-              <PhotoViewer
-                photos={scan.photos}
-                focusIndex={focusIndex}
-                readings={scan.extraction?.images}
-                onRetake={retakePanel}
-                onRemove={removePhoto}
-              />
+              {scan.photos.length > 0 ? (
+                <PhotoViewer
+                  photos={scan.photos}
+                  focusIndex={focusIndex}
+                  readings={scan.extraction?.images}
+                  onRetake={retakePanel}
+                  onRemove={removePhoto}
+                />
+              ) : (
+                <p className="small muted photo-empty-note">
+                  The saved reading can demonstrate extracted text and uncertainty,
+                  but there is no original image to inspect in this sample.
+                </p>
+              )}
             </details>
           )}
         </aside>
@@ -97,35 +145,36 @@ export function ScanPage({
         {capturePhase ? (
           /* Capture-phase guidance column */
           <div className="ws ws-main">
-            <section className="card">
-              <h2>How this works</h2>
+            <section className="guide" aria-labelledby="guide-title">
+              <h2 id="guide-title" className="caps">Get these in frame</h2>
+              <ol className="steps-guide">
+                <li>
+                  <span>
+                    Ingredient list
+                    <small>the whole list, edge to edge</small>
+                  </span>
+                </li>
+                <li>
+                  <span>
+                    Allergen line
+                    <small>“Contains…” and “May contain…”</small>
+                  </span>
+                </li>
+                <li>
+                  <span>
+                    Nutrition panel
+                    <small>optional</small>
+                  </span>
+                </li>
+              </ol>
+            </section>
+            <section className="guide" aria-labelledby="how-title">
+              <h2 id="how-title" className="caps">How this works</h2>
               <ol className="how-list muted">
-                <li>Photograph the ingredient list, allergen line, and nutrition panel.</li>
                 <li>We read the text exactly as printed and show you what we could and couldn't read.</li>
                 <li>You confirm what the whole pack shows and correct any misreads.</li>
-                <li>Your profile is compared against the readable text — with the evidence beside it.</li>
+                <li>Your profile is compared against the readable text, with the evidence beside it.</li>
               </ol>
-              {!hasProfile && (
-                <div className="note" role="note">
-                  <InfoIcon />
-                  <p className="small">
-                    <strong>No restrictions selected.</strong> You can still scan a
-                    label, but there's nothing to compare it against yet.{" "}
-                    <button type="button" className="btn btn-sm" onClick={onEditProfile}>
-                      Set up your profile
-                    </button>
-                  </p>
-                </div>
-              )}
-            </section>
-            <section className="card">
-              <div className="card-heading">
-                <h2>Your profile</h2>
-                <button type="button" className="btn btn-sm" onClick={onEditProfile}>
-                  Edit
-                </button>
-              </div>
-              <p className="chip chip-accent">{profileSummary(profile)}</p>
             </section>
             <PersistentNote />
           </div>
@@ -272,10 +321,10 @@ export function ScanPage({
               <section className="card actions-card">
                 <div className="row spread">
                   <button type="button" className="btn" onClick={goCapture}>
-                    Back to photos
+                    Add or retake photos
                   </button>
-                  <button type="button" className="btn btn-quiet" onClick={clearScan}>
-                    Clear scan and start over
+                  <button type="button" className="btn btn-primary" onClick={clearScan}>
+                    Scan next label
                   </button>
                   <button type="button" className="btn btn-quiet" onClick={onEditProfile}>
                     Edit profile
@@ -288,6 +337,23 @@ export function ScanPage({
           </>
         )}
       </div>
+      {!capturePhase && (
+        <div className="scan-next-bar" role="group" aria-label="Next scan actions">
+          <div className="scan-next-actions">
+            <button
+              type="button"
+              className="btn"
+              disabled={scan.photos.length === 0}
+              onClick={openPhotos}
+            >
+              Photos
+            </button>
+            <button type="button" className="btn btn-primary" onClick={clearScan}>
+              Scan next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

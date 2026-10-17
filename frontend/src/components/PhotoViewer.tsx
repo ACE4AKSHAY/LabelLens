@@ -1,5 +1,6 @@
-// PhotoViewer: the uploaded photos. Tapping "show on photo" from an evidence
-// item focuses that image (scroll + brief highlight). No bounding boxes.
+// PhotoViewer: choose among the uploaded photos. Evidence links select the
+// corresponding full photo and outline its frame briefly; there are no text
+// coordinates, so the image is never presented as an exact highlight.
 
 import { useEffect, useRef, useState } from "react";
 import type { ImageReading } from "@shared/contracts";
@@ -19,44 +20,70 @@ export function PhotoViewer({
   onRetake: (photoId: string) => void;
   onRemove: (photoId: string) => void;
 }) {
-  const refs = useRef<(HTMLElement | null)[]>([]);
-  const [highlight, setHighlight] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [highlight, setHighlight] = useState(false);
+  const viewerRef = useRef<HTMLDivElement>(null);
+
+  const safeIndex = Math.min(selectedIndex, Math.max(0, photos.length - 1));
+  const selectedPhoto = photos[safeIndex];
+  const readingsByIndex = new Map(readings.map((reading) => [reading.index, reading]));
 
   useEffect(() => {
     if (focusIndex === null) return;
     const position = photos.findIndex(
       (photo, index) => (photo.readingIndex ?? index) === focusIndex,
     );
-    const el = position >= 0 ? refs.current[position] : null;
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      setHighlight(position);
-      const t = window.setTimeout(() => setHighlight(null), 1600);
-      return () => window.clearTimeout(t);
-    }
+    if (position < 0) return;
+
+    setSelectedIndex(position);
+    setHighlight(true);
+    viewerRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "nearest",
+    });
+    const timeout = window.setTimeout(() => setHighlight(false), 1600);
+    return () => window.clearTimeout(timeout);
   }, [focusIndex, photos]);
 
+  useEffect(() => {
+    setSelectedIndex((current) => Math.min(current, Math.max(0, photos.length - 1)));
+  }, [photos.length]);
+
   if (photos.length === 0) return null;
-  const readingsByIndex = new Map(readings.map((reading) => [reading.index, reading]));
 
   return (
-    <div className="photo-viewer">
-      {photos.map((photo, i) => (
+    <div className="photo-viewer" ref={viewerRef}>
+      <div className="photo-thumbnails" role="group" aria-label="Choose a label photo">
+        {photos.map((photo, index) => (
+          <button
+            key={photo.id}
+            type="button"
+            className="photo-thumb"
+            aria-label={`Show photo ${index + 1}`}
+            aria-pressed={safeIndex === index}
+            onClick={() => setSelectedIndex(index)}
+          >
+            <img src={photo.url} alt="" />
+            <span>Photo {index + 1}</span>
+          </button>
+        ))}
+      </div>
+
+      {selectedPhoto && (
         <figure
-          key={photo.id}
-          ref={(el) => {
-            refs.current[i] = el;
-          }}
-          className={`photo-frame ${highlight === i ? "photo-highlight" : ""}`}
+          key={selectedPhoto.id}
+          className={`photo-frame ${highlight ? "photo-highlight" : ""}`}
         >
-          <img src={photo.url} alt={`Uploaded label photo ${i + 1}`} />
+          <img src={selectedPhoto.url} alt={`Uploaded label photo ${safeIndex + 1}`} />
           <figcaption className="photo-caption">
-            <span>Photo {i + 1}</span>
+            <span>Photo {safeIndex + 1} of {photos.length}</span>
             <span className="row">
               <button
                 type="button"
                 className="btn btn-quiet btn-sm"
-                onClick={() => onRetake(photo.id)}
+                onClick={() => onRetake(selectedPhoto.id)}
               >
                 <RetakeIcon size={15} />
                 Retake
@@ -64,7 +91,7 @@ export function PhotoViewer({
               <button
                 type="button"
                 className="btn btn-quiet btn-sm"
-                onClick={() => onRemove(photo.id)}
+                onClick={() => onRemove(selectedPhoto.id)}
               >
                 <TrashIcon size={15} />
                 Remove
@@ -74,12 +101,12 @@ export function PhotoViewer({
           <div className="photo-reading">
             <p>
               <strong>Photo reading estimate:</strong>{" "}
-              {readingsByIndex.get(photo.readingIndex ?? i)?.quality ??
+              {readingsByIndex.get(selectedPhoto.readingIndex ?? safeIndex)?.quality ??
                 "No quality reading returned"}
             </p>
             <p>
               <strong>Note:</strong>{" "}
-              {readingsByIndex.get(photo.readingIndex ?? i)?.note ??
+              {readingsByIndex.get(selectedPhoto.readingIndex ?? safeIndex)?.note ??
                 "No note provided"}
             </p>
             <p className="small muted">
@@ -88,7 +115,7 @@ export function PhotoViewer({
             </p>
           </div>
         </figure>
-      ))}
+      )}
     </div>
   );
 }

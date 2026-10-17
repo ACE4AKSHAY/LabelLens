@@ -51,7 +51,7 @@ export function PackageFacts({
                 onClick={() => onFocusPhoto(fact.image_index)}
               >
                 <ZoomIcon size={15} />
-                Show on photo
+                Open photo
               </button>
             )}
           </li>

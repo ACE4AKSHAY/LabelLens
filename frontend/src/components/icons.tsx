@@ -30,8 +30,8 @@ export function ConflictIcon({ size = 18, className }: IconProps): JSX.Element {
         d="M8.2 2h7.6L22 8.2v7.6L15.8 22H8.2L2 15.8V8.2L8.2 2z"
         fill="currentColor"
       />
-      <line x1="12" y1="7.5" x2="12" y2="13" stroke="var(--surface)" strokeWidth="2.4" />
-      <circle cx="12" cy="16.6" r="1.4" fill="var(--surface)" />
+      <line x1="12" y1="7.5" x2="12" y2="13" stroke="var(--sheet)" strokeWidth="2.4" />
+      <circle cx="12" cy="16.6" r="1.4" fill="var(--sheet)" />
     </svg>
   );
 }
@@ -44,8 +44,8 @@ export function PossibleIcon({ size = 18, className }: IconProps): JSX.Element {
         d="M12 2.5 22.5 21h-21L12 2.5z"
         fill="currentColor"
       />
-      <line x1="12" y1="9.5" x2="12" y2="15" stroke="var(--surface)" strokeWidth="2.4" />
-      <circle cx="12" cy="18" r="1.3" fill="var(--surface)" />
+      <line x1="12" y1="9.5" x2="12" y2="15" stroke="var(--sheet)" strokeWidth="2.4" />
+      <circle cx="12" cy="18" r="1.3" fill="var(--sheet)" />
     </svg>
   );
 }
@@ -57,11 +57,11 @@ export function UnknownIcon({ size = 18, className }: IconProps): JSX.Element {
       <circle cx="12" cy="12" r="10" fill="currentColor" stroke="none" />
       <path
         d="M9.3 9.2a2.8 2.8 0 1 1 3.6 3.4c-.7.3-.9.8-.9 1.6"
-        stroke="var(--surface)"
+        stroke="var(--sheet)"
         strokeWidth="2.2"
         fill="none"
       />
-      <circle cx="12" cy="17.3" r="1.3" fill="var(--surface)" />
+      <circle cx="12" cy="17.3" r="1.3" fill="var(--sheet)" />
     </svg>
   );
 }
